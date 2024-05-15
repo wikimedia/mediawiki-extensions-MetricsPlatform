@@ -1,0 +1,49 @@
+{
+	"name": "MetricsPlatform",
+	"author": [
+		"Data Products <https://www.mediawiki.org/wiki/Data_Platform_Engineering/Data_Products>",
+		"Sam Smith",
+		"Santiago Faci",
+		"Clare Ming"
+	],
+	"url": "https://www.mediawiki.org/wiki/Extension:MetricsPlatform",
+	"descriptionmsg": "metricsplatform-desc",
+	"license-name": "GPL-2.0-or-later",
+	"type": "other",
+	"requires": {
+		"MediaWiki": ">= 1.43.0",
+		"extensions": {
+			"EventStreamConfig": "*"
+		}
+	},
+	"AutoloadNamespaces": {
+		"MediaWiki\\Extension\\MetricsPlatform\\": "includes/"
+	},
+	"config": {
+		"MetricsPlatformEnable": {
+			"description": "Enable Metrics Platform.",
+			"value": false
+		},
+		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
+			"value": "http://localhost:80"
+		}
+	},
+	"HookHandlers": {
+		"main": {
+			"class": "MediaWiki\\Extension\\MetricsPlatform\\Hooks",
+			"services": [ "MetricsPlatform.InstrumentConfigs" ]
+		}
+	},
+	"Hooks": {
+		"GetStreamConfigs": "main"
+	},
+	"MessagesDirs": {
+		"MetricsPlatform": [
+			"i18n"
+		]
+	},
+	"ServiceWiringFiles": [
+		"ServiceWiring.php"
+	],
+	"manifest_version": 2
+}
