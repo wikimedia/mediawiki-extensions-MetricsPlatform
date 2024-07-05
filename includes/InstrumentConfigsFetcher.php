@@ -67,7 +67,7 @@ class InstrumentConfigsFetcher {
 					$this->logger->warning( 'MPIC API is not working.' );
 					return [];
 				}
-				return FormatJson::decode( $json, FormatJson::FORCE_ASSOC );
+				return FormatJson::decode( $json, true );
 			},
 			[
 				'staleTTL' => $cache::TTL_DAY
