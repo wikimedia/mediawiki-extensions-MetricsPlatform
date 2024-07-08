@@ -26,12 +26,19 @@
 		},
 		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
 			"value": "http://localhost:80"
+		},
+		"MetricsPlatformEnableStreamConfigsMerging": {
+			"description": "Enable merging instrument configs with stream configs provided by the EventStreamConfig extension.",
+			"value": false
 		}
 	},
 	"HookHandlers": {
 		"main": {
-			"class": "MediaWiki\\Extension\\MetricsPlatform\\Hooks",
-			"services": [ "MetricsPlatform.InstrumentConfigs" ]
+			"factory": "MediaWiki\\Extension\\MetricsPlatform\\Hooks::newInstance",
+			"services": [
+				"MetricsPlatform.InstrumentConfigs",
+				"MainConfig"
+			]
 		}
 	},
 	"Hooks": {

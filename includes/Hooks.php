@@ -19,9 +19,15 @@
 
 namespace MediaWiki\Extension\MetricsPlatform;
 
+use MediaWiki\Config\Config;
+use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
 
 class Hooks implements GetStreamConfigsHook {
+
+	public const CONSTRUCTOR_OPTIONS = [
+		'MetricsPlatformEnableStreamConfigsMerging',
+	];
 
 	/** @var string */
 	public const PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE = 'analytics/product_metrics/web/base';
@@ -33,11 +39,20 @@ class Hooks implements GetStreamConfigsHook {
 	public const PRODUCT_METRICS_DESTINATION_EVENT_SERVICE = 'eventgate-analytics-external';
 
 	private array $instrumentConfigs;
+	private ServiceOptions $options;
 
-	public function __construct(
-		array $instrumentConfigs
-	) {
+	public static function newInstance( array $instrumentConfigs, Config $config ): self {
+		return new self(
+			$instrumentConfigs,
+			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $config )
+		);
+	}
+
+	public function __construct( array $instrumentConfigs, ServiceOptions $options ) {
 		$this->instrumentConfigs = $instrumentConfigs;
+
+		$options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
+		$this->options = $options;
 	}
 
 	/**
@@ -45,6 +60,10 @@ class Hooks implements GetStreamConfigsHook {
 	 * @param array &$streamConfigs
 	 */
 	public function onGetStreamConfigs( array &$streamConfigs ): void {
+		if ( !$this->options->get( 'MetricsPlatformEnableStreamConfigsMerging' ) ) {
+			return;
+		}
+
 		foreach ( $this->instrumentConfigs as $value ) {
 			$streamConfigs[ $this->createStreamConfigKey( $value['slug'] ) ] = [
 				'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,

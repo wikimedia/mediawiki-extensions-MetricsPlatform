@@ -44,7 +44,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 
 		$this->setMwGlobals( [
 			'wgEventStreams' => self::STREAM_CONFIGS_FIXTURE,
-			'wgMetricsPlatformEnable' => true
+			'wgMetricsPlatformEnable' => true,
+			'wgMetricsPlatformEnableStreamConfigsMerging' => true,
 		] );
 
 		$this->installMockHttp( $this->makeFakeHttpRequest( '[
