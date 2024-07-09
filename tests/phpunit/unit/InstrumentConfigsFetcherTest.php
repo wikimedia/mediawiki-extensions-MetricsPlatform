@@ -105,10 +105,28 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			"task" => "T123456",
 			"compliance_requirements" => "legal",
 			"sample_unit" => "pageview",
-			"sample_rate" => 0.5,
+			"sample_rate" => [
+				"default" => 1,
+				"0.5" => [
+					"bnwiki"
+				],
+			],
 			"environments" => "development",
 			"security_legal_review" => "pending",
-			"status" => "off"
+			"status" => 0,
+			"stream_name" => "mediawiki.web_ui_scroll",
+			"schema_title" => "analytics/mediawiki/web_ui_scroll",
+			"schema_type" => "custom",
+			"email_address" => "web@wikimedia.org",
+			"type" => "baseline",
+			"contextual_attributes" => [
+				"page_namespace",
+				"page_revision_id",
+				"page_wikidata_qid",
+				"page_is_redirect",
+				"page_user_groups_allowed_to_edit",
+				"mediawiki_skin"
+			],
 		];
 		$data2 = [
 			"id" => 2,
@@ -125,10 +143,29 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			"task" => "T234567",
 			"compliance_requirements" => "legal",
 			"sample_unit" => "pageview",
-			"sample_rate" => 0.33,
+			"sample_rate" => [
+				"default" => 0.5,
+				"0.1" => [
+					"frwiki"
+				],
+				"0.01" => [
+					"enwiki"
+				]
+			],
 			"environments" => "staging",
 			"security_legal_review" => "pending",
-			"status" => "on"
+			"status" => 1,
+			"stream_name" => "mediawiki.desktop_ui_interactions",
+			"schema_title" => "analytics/product_metrics/mediawiki/desktop_ui_interactions/",
+			"schema_type" => "custom",
+			"email_address" => "web@wikimedia.org",
+			"type" => "baseline",
+			"contextual_attributes" => [
+				"page_id",
+				"page_title",
+				"page_wikidata_qid",
+				"mediawiki_skin"
+			],
 		];
 
 		return [

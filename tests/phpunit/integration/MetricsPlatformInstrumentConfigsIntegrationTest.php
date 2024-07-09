@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration;
 
 use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
 use MediaWiki\Extension\MetricsPlatform\Hooks;
+use MediaWiki\MainConfigNames;
 use MediaWikiIntegrationTestCase;
 use MockHttpTrait;
 
@@ -48,6 +49,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 			'wgMetricsPlatformEnableStreamConfigsMerging' => true,
 		] );
 
+		$this->overrideConfigValue( MainConfigNames::DBname, 'bnwiki' );
+
 		$this->installMockHttp( $this->makeFakeHttpRequest( '[
 			{
 				"id": 1,
@@ -64,10 +67,28 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 				"task": "task 1",
 				"compliance_requirements": "legal",
 				"sample_unit": "pageview",
-				"sample_rate": 0.25,
+				"sample_rate": {
+					"default": 0.25,
+					"0.75": [
+						"bnwiki"
+					]
+				},
 				"environments": "development",
 				"security_legal_review": "pending",
-				"status": "off"
+				"status": 1,
+				"stream_name": "mediawiki.web_ui_scroll",
+				"schema_title": "analytics/mediawiki/web_ui_scroll",
+				"schema_type": "custom",
+				"email_address": "web@wikimedia.org",
+				"type": "baseline",
+				"contextual_attributes": [
+					"page_namespace",
+					"page_revision_id",
+					"page_wikidata_qid",
+					"page_is_redirect",
+					"page_user_groups_allowed_to_edit",
+					"mediawiki_skin"
+				]
 			},
 			{
 				"id": 2,
@@ -84,10 +105,65 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 				"task": "task 1",
 				"compliance_requirements": "gdpr",
 				"sample_unit": "session",
-				"sample_rate": 0.5,
+				"sample_rate": {
+					"default": 0.5,
+					"0.1": [
+						"frwiki",
+						"bnwiki",
+						"arwiki"
+					],
+					"0.01": [
+						"enwiki"
+					]
+				},
 				"environments": "staging",
 				"security_legal_review": "reviewed",
-				"status": "on"
+				"status": 1,
+				"stream_name": "mediawiki.desktop_ui_interactions",
+				"schema_title": "analytics/product_metrics/mediawiki/desktop_ui_interactions/",
+				"schema_type": "custom",
+				"email_address": "web@wikimedia.org",
+				"type": "baseline",
+				"contextual_attributes": [
+					"page_id",
+					"page_title",
+					"page_wikidata_qid",
+					"mediawiki_skin"
+				]
+			},
+			{
+				"id": 3,
+				"name": "Test Instrument",
+				"slug": "test-instrument",
+				"description": "test description",
+				"creator": "Test Creator",
+				"owner": "Test Team",
+				"purpose": "Test Purpose",
+				"created_at": "2024-05-03T03:22:15.000Z",
+				"updated_at": "2024-05-03T03:22:15.000Z",
+				"start_date": "2024-05-03T03:22:15.000Z",
+				"end_date": "2024-05-15T06:00:00.000Z",
+				"task": "Test task",
+				"compliance_requirements": "gdpr",
+				"sample_unit": "session",
+				"sample_rate": {
+					"default": 0.5,
+					"0.33": [
+						"frwiki"
+					]
+				},
+				"environments": "staging",
+				"security_legal_review": "pending",
+				"status": 0,
+				"stream_name": "test_stream",
+				"schema_title": "test_schema",
+				"schema_type": "custom",
+				"email_address": "info@wikimedia.org",
+				"type": "baseline",
+				"contextual_attributes": [
+					"page_id",
+					"page_namespace"
+				]
 			}
 		]'
 		) );
@@ -140,8 +216,20 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 			$firstStream => [
 				'stream' => $firstStream,
 				'schema_title' => Hooks::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
+				'producers' => [
+					'metrics_platform_client' => [
+						'provide_values' => [
+							"page_namespace",
+							"page_revision_id",
+							"page_wikidata_qid",
+							"page_is_redirect",
+							"page_user_groups_allowed_to_edit",
+							"mediawiki_skin"
+						]
+					]
+				],
 				'sample' => [
-					'rate' => $mpicStreamConfigs[0]['sample_rate'],
+					'rate' => 0.75,
 					'unit' => $mpicStreamConfigs[0]['sample_unit'],
 				],
 				'destination_event_service' => 'eventgate-analytics-external',
@@ -155,8 +243,18 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 			$secondStream => [
 				'stream' => $secondStream,
 				'schema_title' => Hooks::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
+				'producers' => [
+					'metrics_platform_client' => [
+						'provide_values' => [
+							"page_id",
+							"page_title",
+							"page_wikidata_qid",
+							"mediawiki_skin"
+						]
+					]
+				],
 				'sample' => [
-					'rate' => $mpicStreamConfigs[1]['sample_rate'],
+					'rate' => 0.1,
 					'unit' => $mpicStreamConfigs[1]['sample_unit'],
 				],
 				'destination_event_service' => 'eventgate-analytics-external',

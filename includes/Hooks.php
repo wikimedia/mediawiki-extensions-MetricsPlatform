@@ -22,11 +22,13 @@ namespace MediaWiki\Extension\MetricsPlatform;
 use MediaWiki\Config\Config;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
+use MediaWiki\MainConfigNames;
 
 class Hooks implements GetStreamConfigsHook {
 
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnableStreamConfigsMerging',
+		MainConfigNames::DBname,
 	];
 
 	/** @var string */
@@ -65,12 +67,18 @@ class Hooks implements GetStreamConfigsHook {
 		}
 
 		foreach ( $this->instrumentConfigs as $value ) {
+			if ( !$value['status'] ) {
+				continue;
+			}
+
 			$streamConfigs[ $this->createStreamConfigKey( $value['slug'] ) ] = [
 				'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
-				'sample' => [
-					'rate' => $value['sample_rate'],
-					'unit' => $value['sample_unit'],
+				'producers' => [
+					'metrics_platform_client' => [
+						'provide_values' => $value['contextual_attributes']
+					]
 				],
+				'sample' => $this->getSampleConfig( $value ),
 				'destination_event_service' => self::PRODUCT_METRICS_DESTINATION_EVENT_SERVICE,
 			];
 		}
@@ -89,5 +97,39 @@ class Hooks implements GetStreamConfigsHook {
 	 */
 	private function createStreamConfigKey( $instrumentSlug ): string {
 		return self::PRODUCT_METRICS_STREAM_PREFIX . str_replace( '-', '_', $instrumentSlug );
+	}
+
+	/**
+	 * @param array $instrumentConfig
+	 * @return array
+	 */
+	private function getSampleConfig( array $instrumentConfig ): array {
+		$sampleConfig = [
+			'rate' => 1.0,
+			'unit' => 'session',
+		];
+
+		if ( array_key_exists( 'sample_rate', $instrumentConfig ) ) {
+			$sampleRates = $instrumentConfig['sample_rate'];
+
+			$sampleConfig['rate'] = $sampleRates['default'];
+			unset( $sampleRates['default'] );
+
+			$dbname = $this->options->get( MainConfigNames::DBname );
+
+			foreach ( $sampleRates as $rate => $wikis ) {
+				if ( in_array( $dbname, $wikis ) ) {
+					$sampleConfig['rate'] = $rate;
+
+					break;
+				}
+			}
+		}
+
+		if ( array_key_exists( 'sample_unit', $instrumentConfig ) ) {
+			$sampleConfig['unit'] = $instrumentConfig['sample_unit'];
+		}
+
+		return $sampleConfig;
 	}
 }
