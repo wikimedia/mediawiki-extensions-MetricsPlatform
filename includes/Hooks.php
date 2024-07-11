@@ -105,7 +105,7 @@ class Hooks implements GetStreamConfigsHook {
 	 */
 	private function getSampleConfig( array $instrumentConfig ): array {
 		$sampleConfig = [
-			'rate' => 1.0,
+			'rate' => 0.0,
 			'unit' => 'session',
 		];
 
