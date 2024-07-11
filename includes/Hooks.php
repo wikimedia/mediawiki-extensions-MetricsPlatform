@@ -71,7 +71,7 @@ class Hooks implements GetStreamConfigsHook {
 				continue;
 			}
 
-			$streamConfigs[ $this->createStreamConfigKey( $value['slug'] ) ] = [
+			$streamConfigs[ $value['stream_name'] ] = [
 				'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
 				'producers' => [
 					'metrics_platform_client' => [
@@ -82,21 +82,6 @@ class Hooks implements GetStreamConfigsHook {
 				'destination_event_service' => self::PRODUCT_METRICS_DESTINATION_EVENT_SERVICE,
 			];
 		}
-	}
-
-	/**
-	 * Builds stream setting key.
-	 *
-	 * The key is built from an instrument's slug using underscores
-	 * instead of dashes and prepended with the product metrics prefix.
-	 * See StreamConfig's constructor and StreamConfig::STREAM_SETTING
-	 * in the EventStreamConfig extension.
-	 *
-	 * @param string $instrumentSlug
-	 * @return string
-	 */
-	private function createStreamConfigKey( $instrumentSlug ): string {
-		return self::PRODUCT_METRICS_STREAM_PREFIX . str_replace( '-', '_', $instrumentSlug );
 	}
 
 	/**

@@ -209,8 +209,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 		$mpicStreamConfigs = $services->getService( 'MetricsPlatform.InstrumentConfigs' );
 		$streamConfigs = $services->getService( 'EventStreamConfig.StreamConfigs' );
 
-		$firstStream = 'product_metrics.' . str_replace( '-', '_', $mpicStreamConfigs[0]['slug'] );
-		$secondStream = 'product_metrics.' . str_replace( '-', '_', $mpicStreamConfigs[1]['slug'] );
+		$firstStream = $mpicStreamConfigs[0]['stream_name'];
+		$secondStream = $mpicStreamConfigs[1]['stream_name'];
 
 		$expected = [
 			$firstStream => [
@@ -297,8 +297,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 			],
 		];
 		$result = $streamConfigs->get( [
-			'product_metrics.web_scroll_ui',
-			'product_metrics.desktop_ui_interactions',
+			'mediawiki.web_ui_scroll',
+			'mediawiki.desktop_ui_interactions',
 			'dog',
 			'foobar'
 		] );
@@ -307,8 +307,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 			$result,
 			'The "foobar" stream from $wgEventStreams, ' .
 			'the "dog" stream from onGetStreamConfigs(), ' .
-			'the "product_metrics.web_scroll_ui" stream, ' .
-			'and the "product_metrics.desktop_ui_interactions" stream are present.'
+			'the "mediawiki.web_ui_scroll" stream, ' .
+			'and the "mediawiki.desktop_ui_interactions" stream are present.'
 		);
 	}
 }
