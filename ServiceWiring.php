@@ -16,7 +16,9 @@ return [
 			$options,
 			$services->getMainWANObjectCache(),
 			$services->getHttpRequestFactory(),
-			$services->getService( 'MetricsPlatform.Logger' )
+			$services->getService( 'MetricsPlatform.Logger' ),
+			$services->getStatsFactory()->withComponent( 'MetricsPlatform' ),
+			$services->getFormatterFactory()->getStatusFormatter( RequestContext::getMain() )
 		);
 		return $fetcher->getInstrumentConfigs();
 	},
