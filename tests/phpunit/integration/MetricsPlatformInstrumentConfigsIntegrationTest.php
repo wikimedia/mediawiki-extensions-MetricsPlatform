@@ -43,13 +43,12 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->setMwGlobals( [
-			'wgEventStreams' => self::STREAM_CONFIGS_FIXTURE,
-			'wgMetricsPlatformEnable' => true,
-			'wgMetricsPlatformEnableStreamConfigsMerging' => true,
+		$this->overrideConfigValues( [
+			'EventStreams' => self::STREAM_CONFIGS_FIXTURE,
+			'MetricsPlatformEnable' => true,
+			'MetricsPlatformEnableStreamConfigsMerging' => true,
+			MainConfigNames::DBname => 'bnwiki'
 		] );
-
-		$this->overrideConfigValue( MainConfigNames::DBname, 'bnwiki' );
 
 		$this->installMockHttp( $this->makeFakeHttpRequest( '[
 			{
@@ -192,9 +191,9 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 	}
 
 	public function testGetMetricsPlatformInstrumentConfigs(): void {
-		$this->setMwGlobals( [
-			'wgEventStreams' => self::STREAM_CONFIGS_FIXTURE,
-			'wgEventStreamsDefaultSettings' => [
+		$this->overrideConfigValues( [
+			'EventStreams' => self::STREAM_CONFIGS_FIXTURE,
+			'EventStreamsDefaultSettings' => [
 				'topic_prefixes' => [
 					'eqiad.'
 				],
