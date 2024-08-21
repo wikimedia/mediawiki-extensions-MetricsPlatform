@@ -7,9 +7,14 @@ use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Json\FormatJson;
+use MediaWiki\Status\Status;
+use MediaWiki\Status\StatusFormatter;
 use MediaWikiUnitTestCase;
+use MWHttpRequest;
 use Psr\Log\LoggerInterface;
+use StatusValue;
 use WANObjectCache;
+use Wikimedia\Stats\StatsFactory;
 
 /**
  * @covers \MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher
@@ -19,6 +24,8 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	private WANObjectCache $WANObjectCache;
 	private HttpRequestFactory $httpRequestFactory;
 	private LoggerInterface $logger;
+	private StatsFactory $statsFactory;
+	private StatusFormatter $statusFormatter;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -29,6 +36,8 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		$this->WANObjectCache = $this->getService( 'WANObjectCache' );
 		$this->httpRequestFactory = $this->createMock( HttpRequestFactory::class );
 		$this->logger = $this->createMock( LoggerInterface::class );
+		$this->statsFactory = StatsFactory::newNull();
+		$this->statusFormatter = $this->createMock( StatusFormatter::class );
 	}
 
 	private function getWANObjectCache() {
@@ -36,29 +45,44 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	}
 
 	public function testSuccess() {
+		$httpRequest = $this->getHttpRequest(
+			StatusValue::newGood( 200 ), 200, $this->instrumentConfigs['responseString'] );
 		$this->httpRequestFactory->expects( $this->once() )
-			->method( 'get' )
-			->willReturn( $this->instrumentConfigs['responseString'] );
+			->method( 'create' )
+			->willReturn( $httpRequest );
+
 		$fetcher = new InstrumentConfigsFetcher(
 			$this->mockOptions(),
 			$this->WANObjectCache,
 			$this->httpRequestFactory,
-			$this->logger
+			$this->logger,
+			$this->statsFactory,
+			$this->statusFormatter
 		);
 		$result = $fetcher->getInstrumentConfigs();
 		$this->assertIsArray( $result );
 		$this->assertArrayEquals( $this->instrumentConfigs['responseArray'], $result );
 	}
 
-	public function testFail() {
+	public function testFailTimeout() {
+		$status = StatusValue::newFatal( "http-timed-out", 408, 'Connection timed out' );
+		$status->setResult( false, 408 );
+		$httpRequest = $this->getHttpRequest( $status, 408, "" );
 		$this->httpRequestFactory->expects( $this->once() )
-			->method( 'get' )
-			->willReturn( null );
+			->method( 'create' )
+			->willReturn( $httpRequest );
+
+		$this->statusFormatter->expects( $this->once() )
+			->method( 'getWikiText' )
+			->willReturn( '(foobar: error message)' );
+
 		$fetcher = new InstrumentConfigsFetcher(
 			$this->mockOptions(),
 			$this->WANObjectCache,
 			$this->httpRequestFactory,
-			$this->logger
+			$this->logger,
+			$this->statsFactory,
+			$this->statusFormatter
 		);
 		$result = $fetcher->getInstrumentConfigs();
 		$this->assertArrayEquals( [], $result );
@@ -67,14 +91,24 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	public function testMalformedResponse() {
 		$response = $this->instrumentConfigs['responseString'];
 		$malformedResponse = str_replace( $response, '"', '\'' );
+		$status = StatusValue::newFatal( "http-timed-out", 400, 'Not Found' );
+		$status->setResult( false, 400 );
+		$httpRequest = $this->getHttpRequest( $status, 400, $malformedResponse );
 		$this->httpRequestFactory->expects( $this->once() )
-			->method( 'get' )
-			->willReturn( $malformedResponse );
+			->method( 'create' )
+			->willReturn( $httpRequest );
+
+		$this->statusFormatter->expects( $this->once() )
+			->method( 'getWikiText' )
+			->willReturn( '(error: message)' );
+
 		$fetcher = new InstrumentConfigsFetcher(
 			$this->mockOptions(),
 			$this->WANObjectCache,
 			$this->httpRequestFactory,
-			$this->logger
+			$this->logger,
+			$this->statsFactory,
+			$this->statusFormatter
 		);
 		$result = $fetcher->getInstrumentConfigs();
 		$this->assertNotEquals( $this->instrumentConfigs['responseArray'], $result );
@@ -172,6 +206,21 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			'responseString' => FormatJson::encode( [ $data1, $data2 ] ),
 			'responseArray' => [ $data1, $data2 ]
 		];
+	}
+
+	private function getHttpRequest( $statusValue, $statusCode, $content, $headers = [] ) {
+		$httpRequest = $this->getMockBuilder( MWHttpRequest::class )
+			->disableOriginalConstructor()
+			->getMock();
+		$httpRequest->method( 'execute' )
+			->willReturn( Status::wrap( $statusValue ) );
+		$httpRequest->method( 'getResponseHeaders' )
+			->willReturn( $headers );
+		$httpRequest->method( 'getStatus' )
+			->willReturn( $statusCode );
+		$httpRequest->method( 'getContent' )
+			->willReturn( $content );
+		return $httpRequest;
 	}
 
 }
