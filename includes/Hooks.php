@@ -22,13 +22,18 @@ namespace MediaWiki\Extension\MetricsPlatform;
 use MediaWiki\Config\Config;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
-use MediaWiki\MainConfigNames;
+use MediaWiki\MediaWikiServices;
+use MediaWiki\Output\Hook\BeforePageDisplayHook;
+use MediaWiki\Output\OutputPage;
+use Skin;
 
-class Hooks implements GetStreamConfigsHook {
+class Hooks implements
+	GetStreamConfigsHook,
+	BeforePageDisplayHook
+{
 
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnableStreamConfigsMerging',
-		MainConfigNames::DBname,
 	];
 
 	/** @var string */
@@ -40,20 +45,30 @@ class Hooks implements GetStreamConfigsHook {
 	/** @var string */
 	public const PRODUCT_METRICS_DESTINATION_EVENT_SERVICE = 'eventgate-analytics-external';
 
-	private InstrumentConfigsFetcher $instrumentConfigFetcher;
+	private InstrumentConfigsFetcher $configsFetcher;
+	private ExperimentManagerFactory $experimentManagerFactory;
 	private ServiceOptions $options;
 
-	public static function newInstance( InstrumentConfigsFetcher $instrumentConfigsFetcher, Config $config ): self {
+	public static function newInstance(
+		InstrumentConfigsFetcher $configsFetcher,
+		ExperimentManagerFactory $experimentManagerFactory,
+		Config $config
+	): self {
 		return new self(
-			$instrumentConfigsFetcher,
+			$configsFetcher,
+			$experimentManagerFactory,
 			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $config )
 		);
 	}
 
-	public function __construct( InstrumentConfigsFetcher $instrumentConfigsFetcher, ServiceOptions $options ) {
-		$this->instrumentConfigFetcher = $instrumentConfigsFetcher;
-
+	public function __construct(
+		InstrumentConfigsFetcher $configsFetcher,
+		ExperimentManagerFactory $experimentManagerFactory,
+		ServiceOptions $options
+	) {
 		$options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
+		$this->configsFetcher = $configsFetcher;
+		$this->experimentManagerFactory = $experimentManagerFactory;
 		$this->options = $options;
 	}
 
@@ -66,13 +81,9 @@ class Hooks implements GetStreamConfigsHook {
 			return;
 		}
 
-		$instrumentConfigs = $this->instrumentConfigFetcher->getInstrumentConfigs();
+		$instrumentConfigs = $this->configsFetcher->getInstrumentConfigs();
 
 		foreach ( $instrumentConfigs as $value ) {
-			if ( !$value['status'] ) {
-				continue;
-			}
-
 			$streamConfigs[ $value['stream_name'] ] = [
 				'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
 				'producers' => [
@@ -80,43 +91,45 @@ class Hooks implements GetStreamConfigsHook {
 						'provide_values' => $value['contextual_attributes']
 					]
 				],
-				'sample' => $this->getSampleConfig( $value ),
+				'sample' => $value['sample'],
 				'destination_event_service' => self::PRODUCT_METRICS_DESTINATION_EVENT_SERVICE,
 			];
 		}
 	}
 
 	/**
-	 * @param array $instrumentConfig
-	 * @return array
+	 * This hook adds a javascript configuration variable to the output.
+	 *
+	 * In order to provide experiment enrollment data with bucketing assignments
+	 * for a logged-in user, we take the user's id to deterministically sample and
+	 * bucket the user. Based on the sample rates of active experiments, the user's
+	 * participation in experimentation cohorts is written to a configuration variable
+	 * that will be read by the Metrics Platform client libraries and instrument code
+	 * to send that data along during events submission.
+	 *
+	 * @param OutputPage $out
+	 * @param Skin $skin
 	 */
-	private function getSampleConfig( array $instrumentConfig ): array {
-		$sampleConfig = [
-			'rate' => 0.0,
-			'unit' => 'session',
-		];
+	public function onBeforePageDisplay( $out, $skin ): void {
+		// Skip if the user is not logged in or is a temporary user.
+		if ( !$out->getUser()->isNamed() ) {
+			return;
+		}
+		$services = MediaWikiServices::getInstance();
 
-		if ( array_key_exists( 'sample_rate', $instrumentConfig ) ) {
-			$sampleRates = $instrumentConfig['sample_rate'];
-
-			$sampleConfig['rate'] = $sampleRates['default'];
-			unset( $sampleRates['default'] );
-
-			$dbname = $this->options->get( MainConfigNames::DBname );
-
-			foreach ( $sampleRates as $rate => $wikis ) {
-				if ( in_array( $dbname, $wikis ) ) {
-					$sampleConfig['rate'] = $rate;
-
-					break;
-				}
-			}
+		// Get the user's central ID (for assigning buckets later) and skip if 0.
+		$lookup = $services->getCentralIdLookupFactory()->getLookup();
+		$userId = $lookup->centralIdFromLocalUser( $out->getUser() );
+		if ( $userId === 0 ) {
+			return;
 		}
 
-		if ( array_key_exists( 'sample_unit', $instrumentConfig ) ) {
-			$sampleConfig['unit'] = $instrumentConfig['sample_unit'];
-		}
+		$experimentManager = $this->experimentManagerFactory->newInstance();
 
-		return $sampleConfig;
+		// Set the JS config variable for the user's experiment enrollment data.
+		$out->addJsConfigVars(
+			'wgMetricsPlatformUserExperiments',
+			$experimentManager->enrollUser( $userId )
+		);
 	}
 }

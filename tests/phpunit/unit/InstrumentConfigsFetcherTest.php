@@ -61,7 +61,16 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		);
 		$result = $fetcher->getInstrumentConfigs();
 		$this->assertIsArray( $result );
-		$this->assertArrayEquals( $this->instrumentConfigs['responseArray'], $result );
+		$this->assertCount( 1, $result, 'It should filter out disabled instruments' );
+
+		$expectedConfig = $this->instrumentConfigs['responseArray'][1];
+		$expectedConfig['sample'] = [
+			'rate' => 0.01,
+			'unit' => 'pageview',
+		];
+		$expectedResult = [ $expectedConfig ];
+
+		$this->assertArrayEquals( $expectedResult, $result );
 	}
 
 	public function testFailTimeout() {
@@ -116,10 +125,11 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 
 	private function mockOptions() {
 		return new ServiceOptions(
-			[ 'MetricsPlatformEnable', 'MetricsPlatformInstrumentConfiguratorBaseUrl' ],
+			[ 'MetricsPlatformEnable', 'MetricsPlatformInstrumentConfiguratorBaseUrl', 'DBname' ],
 			[
 				'MetricsPlatformEnable' => true,
-				'MetricsPlatformInstrumentConfiguratorBaseUrl' => 'baseUrl'
+				'MetricsPlatformInstrumentConfiguratorBaseUrl' => 'baseUrl',
+				'DBname' => 'enwiki',
 			] );
 	}
 

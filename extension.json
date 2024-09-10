@@ -36,13 +36,15 @@
 		"main": {
 			"factory": "MediaWiki\\Extension\\MetricsPlatform\\Hooks::newInstance",
 			"services": [
-				"MetricsPlatform.InstrumentConfigsFetcher",
+				"MetricsPlatform.ConfigsFetcher",
+				"MetricsPlatform.ExperimentManagerFactory",
 				"MainConfig"
 			]
 		}
 	},
 	"Hooks": {
-		"GetStreamConfigs": "main"
+		"GetStreamConfigs": "main",
+		"BeforePageDisplay": "main"
 	},
 	"MessagesDirs": {
 		"MetricsPlatform": [
