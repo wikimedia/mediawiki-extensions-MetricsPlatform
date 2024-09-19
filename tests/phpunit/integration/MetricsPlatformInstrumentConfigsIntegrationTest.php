@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration;
 
 use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
 use MediaWiki\Extension\MetricsPlatform\Hooks;
+use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\MainConfigNames;
 use MediaWikiIntegrationTestCase;
 use MockHttpTrait;
@@ -205,7 +206,10 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 		$hookContainer = $services->getHookContainer();
 		$hookContainer->register( 'GetStreamConfigs', [ $this, 'onGetStreamConfigs' ] );
 
-		$mpicStreamConfigs = $services->getService( 'MetricsPlatform.InstrumentConfigs' );
+		/** @var InstrumentConfigsFetcher $instrumentConfigsFetcher */
+		$instrumentConfigsFetcher = $services->getService( 'MetricsPlatform.InstrumentConfigsFetcher' );
+		$mpicStreamConfigs = $instrumentConfigsFetcher->getInstrumentConfigs();
+
 		$streamConfigs = $services->getService( 'EventStreamConfig.StreamConfigs' );
 
 		$firstStream = $mpicStreamConfigs[0]['stream_name'];

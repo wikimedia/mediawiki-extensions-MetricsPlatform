@@ -7,12 +7,12 @@ use MediaWiki\MediaWikiServices;
 use Psr\Log\LoggerInterface;
 
 return [
-	'MetricsPlatform.InstrumentConfigs' => static function ( MediaWikiServices $services )  {
+	'MetricsPlatform.InstrumentConfigsFetcher' => static function ( MediaWikiServices $services )  {
 		$options = new ServiceOptions(
 			InstrumentConfigsFetcher::CONSTRUCTOR_OPTIONS,
 			$services->getMainConfig()
 		);
-		$fetcher = new InstrumentConfigsFetcher(
+		return new InstrumentConfigsFetcher(
 			$options,
 			$services->getMainWANObjectCache(),
 			$services->getHttpRequestFactory(),
@@ -20,7 +20,6 @@ return [
 			$services->getStatsFactory()->withComponent( 'MetricsPlatform' ),
 			$services->getFormatterFactory()->getStatusFormatter( RequestContext::getMain() )
 		);
-		return $fetcher->getInstrumentConfigs();
 	},
 	'MetricsPlatform.Logger' => static function (): LoggerInterface {
 		return LoggerFactory::getInstance( 'MetricsPlatform' );

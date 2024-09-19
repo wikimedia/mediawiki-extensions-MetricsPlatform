@@ -40,18 +40,18 @@ class Hooks implements GetStreamConfigsHook {
 	/** @var string */
 	public const PRODUCT_METRICS_DESTINATION_EVENT_SERVICE = 'eventgate-analytics-external';
 
-	private array $instrumentConfigs;
+	private InstrumentConfigsFetcher $instrumentConfigFetcher;
 	private ServiceOptions $options;
 
-	public static function newInstance( array $instrumentConfigs, Config $config ): self {
+	public static function newInstance( InstrumentConfigsFetcher $instrumentConfigsFetcher, Config $config ): self {
 		return new self(
-			$instrumentConfigs,
+			$instrumentConfigsFetcher,
 			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $config )
 		);
 	}
 
-	public function __construct( array $instrumentConfigs, ServiceOptions $options ) {
-		$this->instrumentConfigs = $instrumentConfigs;
+	public function __construct( InstrumentConfigsFetcher $instrumentConfigsFetcher, ServiceOptions $options ) {
+		$this->instrumentConfigFetcher = $instrumentConfigsFetcher;
 
 		$options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
 		$this->options = $options;
@@ -66,7 +66,9 @@ class Hooks implements GetStreamConfigsHook {
 			return;
 		}
 
-		foreach ( $this->instrumentConfigs as $value ) {
+		$instrumentConfigs = $this->instrumentConfigFetcher->getInstrumentConfigs();
+
+		foreach ( $instrumentConfigs as $value ) {
 			if ( !$value['status'] ) {
 				continue;
 			}
