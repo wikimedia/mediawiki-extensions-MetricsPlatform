@@ -57,15 +57,16 @@ class InstrumentConfigsFetcher {
 		}
 		$config = $this->options;
 		$cache = $this->WANObjectCache;
+		$fname = __METHOD__;
 
 		return $cache->getWithSetCallback(
 			$cache->makeKey( 'MetricsPlatform', 'InstrumentConfigs', self::VERSION ),
 			$cache::TTL_MINUTE,
-			function () use ( $config ) {
+			function () use ( $config, $fname ) {
 				$startTime = microtime( true );
 				$baseUrl = $config->get( 'MetricsPlatformInstrumentConfiguratorBaseUrl' );
 				$url = $baseUrl . self::MPIC_API_ENDPOINT;
-				$request = $this->httpRequestFactory->create( $url, [ 'timeout' => self::HTTP_TIMEOUT ] );
+				$request = $this->httpRequestFactory->create( $url, [ 'timeout' => self::HTTP_TIMEOUT ], $fname );
 				$status = $request->execute();
 				$labels = [];
 				if ( $status->isOK() ) {
