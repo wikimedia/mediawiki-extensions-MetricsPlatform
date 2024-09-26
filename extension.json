@@ -36,7 +36,7 @@
 		"main": {
 			"factory": "MediaWiki\\Extension\\MetricsPlatform\\Hooks::newInstance",
 			"services": [
-				"MetricsPlatform.InstrumentConfigs",
+				"MetricsPlatform.InstrumentConfigsFetcher",
 				"MainConfig"
 			]
 		}
