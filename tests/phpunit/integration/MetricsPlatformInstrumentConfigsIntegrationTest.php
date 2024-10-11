@@ -10,7 +10,7 @@ use MediaWikiIntegrationTestCase;
 use MockHttpTrait;
 
 /**
- * @covers \MediaWiki\Extension\MetricsPlatform\Hooks
+ * @covers \MediaWiki\Extension\MetricsPlatform\Hooks::onGetStreamConfigs
  * @group MetricsPlatform
  */
 class MetricsPlatformInstrumentConfigsIntegrationTest
@@ -207,7 +207,7 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 		$hookContainer->register( 'GetStreamConfigs', [ $this, 'onGetStreamConfigs' ] );
 
 		/** @var InstrumentConfigsFetcher $instrumentConfigsFetcher */
-		$instrumentConfigsFetcher = $services->getService( 'MetricsPlatform.InstrumentConfigsFetcher' );
+		$instrumentConfigsFetcher = $services->getService( 'MetricsPlatform.ConfigsFetcher' );
 		$mpicStreamConfigs = $instrumentConfigsFetcher->getInstrumentConfigs();
 
 		$streamConfigs = $services->getService( 'EventStreamConfig.StreamConfigs' );

@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\MetricsPlatform;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Json\FormatJson;
+use MediaWiki\MainConfigNames;
 use MediaWiki\Status\Status;
 use MediaWiki\Status\StatusFormatter;
 use Psr\Log\LoggerInterface;
@@ -14,8 +15,10 @@ use Wikimedia\Stats\StatsFactory;
 class InstrumentConfigsFetcher {
 	private const VERSION = 1;
 	private const HTTP_TIMEOUT = 1;
-
-	public const MPIC_API_ENDPOINT = "/api/v1/instruments";
+	private const INSTRUMENT = 1;
+	private const EXPERIMENT = 2;
+	public const MPIC_API_INSTRUMENTS_ENDPOINT = "/api/v1/instruments";
+	public const MPIC_API_EXPERIMENTS_ENDPOINT = "/api/v1/experiments";
 
 	/**
 	 * Name of the main config key(s) for instrument configuration.
@@ -24,7 +27,8 @@ class InstrumentConfigsFetcher {
 	 */
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnable',
-		'MetricsPlatformInstrumentConfiguratorBaseUrl'
+		'MetricsPlatformInstrumentConfiguratorBaseUrl',
+		MainConfigNames::DBname,
 	];
 	private ServiceOptions $options;
 	private WANObjectCache $WANObjectCache;
@@ -50,7 +54,22 @@ class InstrumentConfigsFetcher {
 		$this->statusFormatter = $statusFormatter;
 	}
 
-	public function getInstrumentConfigs(): ?array {
+	public function getInstrumentConfigs(): array {
+		return $this->getConfigs( 1 );
+	}
+
+	public function getExperimentConfigs(): array {
+		return $this->getConfigs( 2 );
+	}
+
+	/**
+	 * Get the instruments and experiments configuration from the Metrics Platform Configurator API.
+	 *
+	 * @param int|null $flag Return only the specified kind of variables: self::INSTRUMENT or self::EXPERIMENT.
+	 *   For internal use only.
+	 * @return array[]
+	 */
+	private function getConfigs( ?int $flag = null ): array {
 		if ( !$this->areDependenciesMet() ) {
 			$this->logger->warning( 'Dependencies not met for the Metrics Platform Instrument Configs Fetcher.' );
 			return [];
@@ -59,13 +78,18 @@ class InstrumentConfigsFetcher {
 		$cache = $this->WANObjectCache;
 		$fname = __METHOD__;
 
-		return $cache->getWithSetCallback(
-			$cache->makeKey( 'MetricsPlatform', 'InstrumentConfigs', self::VERSION ),
+		// Check for which api endpoint should be queried and set corresponding cache key.
+		$type = $flag ?? self::INSTRUMENT;
+		$endpoint = ( $type > 1 ) ? self::MPIC_API_EXPERIMENTS_ENDPOINT : self::MPIC_API_INSTRUMENTS_ENDPOINT;
+		$cacheKey = ( $type === self::EXPERIMENT ) ? 'ExperimentConfigs' : 'InstrumentConfigs';
+
+		$result = $cache->getWithSetCallback(
+			$cache->makeKey( 'MetricsPlatform', $cacheKey, self::VERSION ),
 			$cache::TTL_MINUTE,
-			function () use ( $config, $fname ) {
+			function () use ( $config, $endpoint, $fname ) {
 				$startTime = microtime( true );
 				$baseUrl = $config->get( 'MetricsPlatformInstrumentConfiguratorBaseUrl' );
-				$url = $baseUrl . self::MPIC_API_ENDPOINT;
+				$url = $baseUrl . $endpoint;
 				$request = $this->httpRequestFactory->create( $url, [ 'timeout' => self::HTTP_TIMEOUT ], $fname );
 				$status = $request->execute();
 				$labels = [];
@@ -106,6 +130,66 @@ class InstrumentConfigsFetcher {
 				'staleTTL' => $cache::TTL_DAY
 			]
 		);
+
+		return $this->postProcessResult( $result );
+	}
+
+	/**
+	 * Post-processes the result of successful request to MPIC by:
+	 *
+	 * 1. Filtering out disabled instruments/experiments (`status=0`)
+	 *
+	 * @param array $result An array of configs retrieved from MPIC
+	 *  TODO: Add a link to the latest response format specification
+	 * @return array
+	 */
+	protected function postProcessResult( array $result ): array {
+		$dbName = $this->options->get( MainConfigNames::DBname );
+		$processedResult = [];
+
+		foreach ( $result as $config ) {
+			if ( !$config['status'] ) {
+				continue;
+			}
+
+			$config['sample'] = $this->getSampleConfig( $config, $dbName );
+
+			$processedResult[] = $config;
+		}
+
+		return $processedResult;
+	}
+
+	/**
+	 * @param array $config
+	 * @param string $dbName
+	 * @return array
+	 */
+	private function getSampleConfig( array $config, string $dbName ) {
+		$sampleConfig = [
+			'rate' => 0.0,
+			'unit' => 'session',
+		];
+
+		if ( array_key_exists( 'sample_rate', $config ) ) {
+			$sampleRates = $config['sample_rate'];
+			$sampleConfig['rate'] = $sampleRates['default'];
+			unset( $sampleRates['default'] );
+
+			foreach ( $sampleRates as $rate => $wikis ) {
+				if ( in_array( $dbName, $wikis ) ) {
+					$sampleConfig['rate'] = $rate;
+
+					break;
+				}
+			}
+		}
+
+		if ( array_key_exists( 'sample_unit', $config ) ) {
+			$sampleConfig['unit'] = $config['sample_unit'];
+		}
+
+		return $sampleConfig;
 	}
 
 	public function areDependenciesMet(): bool {
