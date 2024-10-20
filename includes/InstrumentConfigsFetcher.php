@@ -9,7 +9,7 @@ use MediaWiki\MainConfigNames;
 use MediaWiki\Status\Status;
 use MediaWiki\Status\StatusFormatter;
 use Psr\Log\LoggerInterface;
-use WANObjectCache;
+use Wikimedia\ObjectCache\WANObjectCache;
 use Wikimedia\Stats\StatsFactory;
 
 class InstrumentConfigsFetcher {

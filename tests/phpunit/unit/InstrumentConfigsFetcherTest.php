@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\unit;
 
-use HashBagOStuff;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\Http\HttpRequestFactory;
@@ -13,7 +12,8 @@ use MediaWikiUnitTestCase;
 use MWHttpRequest;
 use Psr\Log\LoggerInterface;
 use StatusValue;
-use WANObjectCache;
+use Wikimedia\ObjectCache\HashBagOStuff;
+use Wikimedia\ObjectCache\WANObjectCache;
 use Wikimedia\Stats\StatsFactory;
 
 /**

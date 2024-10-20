@@ -1,6 +1,7 @@
 <?php
 
 use MediaWiki\Config\ServiceOptions;
+use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\MetricsPlatform\ExperimentManagerFactory;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\Logger\LoggerFactory;
