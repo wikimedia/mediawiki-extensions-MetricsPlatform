@@ -259,8 +259,13 @@ class InstrumentConfigsFetcher {
 		// Loop through error messages to aggregate counters of different types.
 		foreach ( $errors as $error ) {
 			$key = $error->getKey();
-			$params = $error->getParams();
-			$labels[] = $key . ': ' . implode( ', ', $params );
+
+			$paramValues = array_map( static function ( $param ) {
+				return $param->getValue();
+			}, $error->getParams() );
+			$paramString = implode( ', ', $paramValues );
+
+			$labels[] = $key . ': ' . $paramString;
 		}
 		return $labels;
 	}
