@@ -31,9 +31,9 @@ class Hooks implements
 	GetStreamConfigsHook,
 	BeforePageDisplayHook
 {
-
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnableStreamConfigsMerging',
+		'MetricsPlatformEnableExperimentOverrides',
 	];
 
 	/** @var string */
@@ -98,7 +98,7 @@ class Hooks implements
 	}
 
 	/**
-	 * This hook adds a javascript configuration variable to the output.
+	 * This hook adds a JavaScript configuration variable to the output.
 	 *
 	 * In order to provide experiment enrollment data with bucketing assignments
 	 * for a logged-in user, we take the user's id to deterministically sample and
@@ -129,7 +129,15 @@ class Hooks implements
 		// Set the JS config variable for the user's experiment enrollment data.
 		$out->addJsConfigVars(
 			'wgMetricsPlatformUserExperiments',
-			$experimentManager->enrollUser( $userId )
+			$experimentManager->enrollUser( $out->getUser(), $out->getRequest() )
 		);
+
+		// Optimization:
+		//
+		// The `ext.metricsPlatform` module only contains a QA-related function right now. Only send the module to the
+		// browser when we allow experiment enrollment overrides.
+		if ( $this->options->get( 'MetricsPlatformEnableExperimentOverrides' ) ) {
+			$out->addModules( 'ext.metricsPlatform' );
+		}
 	}
 }

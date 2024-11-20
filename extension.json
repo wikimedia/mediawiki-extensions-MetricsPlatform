@@ -24,6 +24,10 @@
 			"description": "Enable Metrics Platform.",
 			"value": false
 		},
+		"MetricsPlatformEnableExperimentOverrides": {
+			"description": "Enable experiment enrollment overrides via a querystring parameter or a cookie.",
+			"value": false
+		},
 		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
 			"value": "http://localhost:80"
 		},
@@ -45,6 +49,31 @@
 	"Hooks": {
 		"GetStreamConfigs": "main",
 		"BeforePageDisplay": "main"
+	},
+	"ResourceModules": {
+		"ext.metricsPlatform": {
+			"localBasePath": "modules/ext.metricsPlatform",
+			"remoteExtPath": "MetricsPlatform/modules/ext.metricsPlatform",
+			"packageFiles": [
+				"index.js",
+				{
+					"name": "config.json",
+					"config": [
+						"MetricsPlatformEnableExperimentOverrides"
+					]
+				}
+			]
+		}
+	},
+	"QUnitTestModule": {
+		"localBasePath": "tests/qunit",
+		"remoteExtPath": "MetricsPlatform/tests/qunit",
+		"scripts": [
+			"ext.metricsPlatform/index.test.js"
+		],
+		"dependencies": [
+			"ext.metricsPlatform"
+		]
 	},
 	"MessagesDirs": {
 		"MetricsPlatform": [

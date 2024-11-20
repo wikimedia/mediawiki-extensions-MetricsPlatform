@@ -9,6 +9,10 @@ use MediaWiki\Config\Config;
  */
 class ExperimentManagerFactory {
 
+	public const CONSTRUCTOR_OPTIONS = [
+		'MetricsPlatformEnableExperimentOverrides'
+	];
+
 	private InstrumentConfigsFetcher $configsFetcher;
 	private Config $config;
 
@@ -24,10 +28,13 @@ class ExperimentManagerFactory {
 	 * @return ExperimentManager
 	 */
 	public function newInstance(): ExperimentManager {
-		if ( $this->config->has( 'MetricsPlatformExperiments' ) ) {
-			return new ExperimentManager( $this->config->get( 'MetricsPlatformExperiments' ) );
-		}
+		$experimentConfigs = $this->config->has( 'MetricsPlatformExperiments' ) ?
+			$this->config->get( 'MetricsPlatformExperiments' ) :
+			$this->configsFetcher->getExperimentConfigs();
 
-		return new ExperimentManager( $this->configsFetcher->getExperimentConfigs() );
+		return new ExperimentManager(
+			$experimentConfigs,
+			$this->config->get( 'MetricsPlatformEnableExperimentOverrides' )
+		);
 	}
 }
