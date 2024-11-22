@@ -50,7 +50,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 						'unit' => 'session',
 						'rate' => 0.0,
 					],
-					'variants' => [],
+					'features' => [],
 				],
 			],
 			'Experiment with a sample rate of 0.0 should be filtered.'
@@ -58,16 +58,26 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
 		yield [
 			[
-				'fruit' => 'tropical:pomegranate',
+				'enrolled' => [
+					'fruit'
+				],
+				'assigned' => [
+					'tropical' => 'pomegranate'
+				],
+				'features' => [
+					'fruit' => [
+						'tropical'
+					]
+				]
 			],
 			[
 				[
 					'slug' => 'fruit',
-					'variants' => [
-						[
-							'name' => 'tropical',
+					'features' => [
+						'tropical' => [
+							'control' => 'pineapple',
 							'values' => [ 'pineapple', 'mango', 'pomegranate' ],
-						],
+						]
 					],
 					'sample' => [
 						'unit' => 'session',
@@ -80,15 +90,22 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
 		yield [
 			[
-				'dinner' => 'unsampled',
+				'enrolled' => [],
+				'assigned' => [
+					'get-takeout' => 'unsampled'
+				],
+				'features' => [
+					'dinner' => [
+						'get-takeout'
+					]
+				]
 			],
 			[
 				[
 					'slug' => 'dinner',
-					'variants' => [
-						[
-							'name' => 'get-takeout',
-							'type' => 'boolean',
+					'features' => [
+						'get-takeout' => [
+							'control' => 'true',
 							'values' => [ 'true', 'false' ]
 						]
 					],
@@ -103,12 +120,31 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
 		yield [
 			[
-				'fruit' => 'tropical:pomegranate',
-				'dinner' => 'unsampled',
-				'dessert' => 'gelato-scoops:1',
+				'enrolled' => [
+					'fruit',
+					'dessert'
+				],
+				'assigned' => [
+					'tropical' => 'pomegranate',
+					'berries' => 'strawberry',
+					'get-takeout' => 'unsampled',
+					'gelato-scoops' => '1'
+				],
+				'features' => [
+					'fruit' => [
+						'tropical',
+						'berries'
+					],
+					'dinner' => [
+						'get-takeout'
+					],
+					'dessert' => [
+						'gelato-scoops'
+					]
+				]
 			],
 			static::getMultipleExperimentConfigs(),
-			'User is enrolled in multiple experiments',
+			'User is enrolled in multiple experiments with one experiment having multiple features to be tested.',
 		];
 	}
 
@@ -126,7 +162,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 						'unit' => 'session',
 						'rate' => 0.0,
 					],
-					'variants' => [],
+					'features' => [],
 				],
 			],
 			'seasons:winter:true',
@@ -135,15 +171,25 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
 		yield [
 			[
-				'fruit' => 'tropical:mango',
+				'enrolled' => [
+					'fruit'
+				],
+				'assigned' => [
+					'tropical' => 'mango'
+				],
+				'features' => [
+					'fruit' => [
+						'tropical'
+					]
+				]
 			],
 			[
 				[
 					'slug' => 'fruit',
-					'variants' => [
-						[
-							'name' => 'tropical',
-							'values' => [ 'pineapple', 'mango', 'pomegranate' ],
+					'features' => [
+						'tropical' => [
+							'control' => 'pineapple',
+							'values' => [ 'pineapple', 'mango', 'pomegranate' ]
 						],
 					],
 					'sample' => [
@@ -158,31 +204,87 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
 		yield [
 			[
-				'fruit' => 'tropical:pomegranate',
-				'dinner' => 'unsampled',
-				'dessert' => 'gelato-scoops:3',
+				'enrolled' => [
+					'fruit',
+					'dessert'
+				],
+				'assigned' => [
+					'tropical' => 'pomegranate',
+					'berries' => 'raspberry',
+					'get-takeout' => 'unsampled',
+					'gelato-scoops' => '3'
+				],
+				'features' => [
+					'fruit' => [
+						'tropical',
+						'berries'
+					],
+					'dinner' => [
+						'get-takeout'
+					],
+					'dessert' => [
+						'gelato-scoops'
+					]
+				]
 			],
 			$multipleExperimentConfigs,
-			'dessert:gelato-scoops:3',
+			'dessert:gelato-scoops:3;fruit:berries:raspberry',
 			'User is enrolled in multiple experiments with one overridden variant',
 		];
 
 		yield [
 			[
-				'fruit' => 'tropical:pineapple',
-				'dinner' => 'unsampled',
-				'dessert' => 'gelato-scoops:1',
+				'enrolled' => [
+					'fruit',
+					'dessert'
+				],
+				'assigned' => [
+					'tropical' => 'pomegranate',
+					'berries' => 'strawberry',
+					'get-takeout' => 'unsampled',
+					'gelato-scoops' => '3'
+				],
+				'features' => [
+					'fruit' => [
+						'tropical',
+						'berries'
+					],
+					'dinner' => [
+						'get-takeout'
+					],
+					'dessert' => [
+						'gelato-scoops'
+					]
+				]
 			],
 			$multipleExperimentConfigs,
-			'fruit:tropical:pineapple',
-			'User is enrolled in multiple experiments with another overridden variant',
+			'fruit:tropical:pomegranate;fruit:berries:strawberry;dessert:gelato-scoops:3',
+			'User is enrolled in multiple experiments with multiple overridden variants',
 		];
 
 		yield [
 			[
-				'fruit' => 'tropical:pomegranate',
-				'dinner' => 'unsampled',
-				'dessert' => 'gelato-scoops:1',
+				'enrolled' => [
+					'fruit',
+					'dessert'
+				],
+				'assigned' => [
+					'berries' => 'strawberry',
+					'get-takeout' => 'unsampled',
+					'gelato-scoops' => '1'
+				],
+				'features' => [
+					'fruit' => [
+						'tropical',
+						'berries'
+					],
+					'dinner' => [
+						'get-takeout'
+					],
+					'dessert' => [
+						'gelato-scoops'
+					]
+				]
 			],
 			$multipleExperimentConfigs,
 			'fruit:tropical:cheese',
@@ -210,11 +312,15 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		return [
 			[
 				'slug' => 'fruit',
-				'variants' => [
-					[
-						'name' => 'tropical',
+				'features' => [
+					'tropical' => [
+						'control' => 'pineapple',
 						'values' => [ 'pineapple', 'mango', 'pomegranate' ]
-					]
+					],
+					'berries' => [
+						'control' => 'blueberry',
+						'values' => [ 'blueberry', 'raspberry', 'strawberry' ]
+					],
 				],
 				'sample' => [
 					'rate' => '1',
@@ -223,12 +329,11 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 			],
 			[
 				'slug' => 'dinner',
-				'variants' => [
-					[
-						'name' => 'get-takeout',
-						'type' => 'boolean',
+				'features' => [
+					'get-takeout' => [
+						'control' => 'true',
 						'values' => [ 'true', 'false' ]
-					]
+					],
 				],
 				'sample' => [
 					'rate' => '0.25',
@@ -237,12 +342,11 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 			],
 			[
 				'slug' => 'dessert',
-				'variants' => [
-					[
-						'name' => 'gelato-scoops',
-						'type' => 'integer',
+				'features' => [
+					'gelato-scoops' => [
+						'control' => 1,
 						'values' => range( 1, 3 )
-					]
+					],
 				],
 				'sample' => [
 					'rate' => '0.75',

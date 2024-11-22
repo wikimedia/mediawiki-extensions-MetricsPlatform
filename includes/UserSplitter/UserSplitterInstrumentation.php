@@ -69,15 +69,16 @@ class UserSplitterInstrumentation {
 	 *
 	 * @param array $buckets
 	 * @param float $userHash
-	 * @return string|null Bucket name or null if buckets are unused.
+	 * @return mixed|null Bucket name or null if buckets are unused.
 	 */
-	public function getBucket( array $buckets, float $userHash ): ?string {
+	public function getBucket( array $buckets, float $userHash ) {
 		if ( $buckets === [] ) {
 			return null;
 		}
 
 		// Get the bucket index (int is akin to floor/truncate, but as int instead of float)
 		$index = (int)$this->scaledHash( $userHash, $buckets );
+
 		return $buckets[ $index ];
 	}
 
