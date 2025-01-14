@@ -20,10 +20,6 @@
 		"MediaWiki\\Extension\\MetricsPlatform\\": "includes/"
 	},
 	"config": {
-		"MetricsPlatformEnable": {
-			"description": "Enable Metrics Platform.",
-			"value": false
-		},
 		"MetricsPlatformEnableExperimentOverrides": {
 			"description": "Enable experiment enrollment overrides via a querystring parameter or a cookie.",
 			"value": false
@@ -31,8 +27,12 @@
 		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
 			"value": "http://localhost:80"
 		},
+		"MetricsPlatformEnableStreamConfigsFetching": {
+			"description": "Enable fetching instrumentation configs from MPIC.",
+			"value": false
+		},
 		"MetricsPlatformEnableStreamConfigsMerging": {
-			"description": "Enable merging instrument configs with stream configs provided by the EventStreamConfig extension.",
+			"description": "Enable merging instrumentation configs with stream configs provided by the EventStreamConfig extension.",
 			"value": false
 		}
 	},

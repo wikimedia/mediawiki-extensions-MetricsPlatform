@@ -32,6 +32,7 @@ class Hooks implements
 	BeforePageDisplayHook
 {
 	public const CONSTRUCTOR_OPTIONS = [
+		'MetricsPlatformEnableStreamConfigsFetching',
 		'MetricsPlatformEnableStreamConfigsMerging',
 		'MetricsPlatformEnableExperimentOverrides',
 	];
@@ -77,23 +78,25 @@ class Hooks implements
 	 * @param array &$streamConfigs
 	 */
 	public function onGetStreamConfigs( array &$streamConfigs ): void {
-		if ( !$this->options->get( 'MetricsPlatformEnableStreamConfigsMerging' ) ) {
+		if ( !$this->options->get( 'MetricsPlatformEnableStreamConfigsFetching' ) ) {
 			return;
 		}
 
 		$instrumentConfigs = $this->configsFetcher->getInstrumentConfigs();
 
-		foreach ( $instrumentConfigs as $value ) {
-			$streamConfigs[ $value['stream_name'] ] = [
-				'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
-				'producers' => [
-					'metrics_platform_client' => [
-						'provide_values' => $value['contextual_attributes']
-					]
-				],
-				'sample' => $value['sample'],
-				'destination_event_service' => self::PRODUCT_METRICS_DESTINATION_EVENT_SERVICE,
-			];
+		if ( $this->options->get( 'MetricsPlatformEnableStreamConfigsMerging' ) ) {
+			foreach ( $instrumentConfigs as $value ) {
+				$streamConfigs[ $value['stream_name'] ] = [
+					'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
+					'producers' => [
+						'metrics_platform_client' => [
+							'provide_values' => $value['contextual_attributes']
+						]
+					],
+					'sample' => $value['sample'],
+					'destination_event_service' => self::PRODUCT_METRICS_DESTINATION_EVENT_SERVICE,
+				];
+			}
 		}
 	}
 

@@ -125,9 +125,8 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 
 	private function mockOptions() {
 		return new ServiceOptions(
-			[ 'MetricsPlatformEnable', 'MetricsPlatformInstrumentConfiguratorBaseUrl', 'DBname' ],
+			[ 'MetricsPlatformInstrumentConfiguratorBaseUrl', 'DBname' ],
 			[
-				'MetricsPlatformEnable' => true,
 				'MetricsPlatformInstrumentConfiguratorBaseUrl' => 'baseUrl',
 				'DBname' => 'enwiki',
 			] );

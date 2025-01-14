@@ -26,7 +26,6 @@ class InstrumentConfigsFetcher {
 	 * @var array
 	 */
 	public const CONSTRUCTOR_OPTIONS = [
-		'MetricsPlatformEnable',
 		'MetricsPlatformInstrumentConfiguratorBaseUrl',
 		MainConfigNames::DBname,
 	];
@@ -70,10 +69,6 @@ class InstrumentConfigsFetcher {
 	 * @return array[]
 	 */
 	private function getConfigs( ?int $flag = null ): array {
-		if ( !$this->areDependenciesMet() ) {
-			$this->logger->warning( 'Dependencies not met for the Metrics Platform Instrument Configs Fetcher.' );
-			return [];
-		}
 		$config = $this->options;
 		$cache = $this->WANObjectCache;
 		$fname = __METHOD__;
@@ -190,10 +185,6 @@ class InstrumentConfigsFetcher {
 		}
 
 		return $sampleConfig;
-	}
-
-	public function areDependenciesMet(): bool {
-		return $this->options->get( 'MetricsPlatformEnable' );
 	}
 
 	/**

@@ -46,7 +46,7 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 
 		$this->overrideConfigValues( [
 			'EventStreams' => self::STREAM_CONFIGS_FIXTURE,
-			'MetricsPlatformEnable' => true,
+			'MetricsPlatformEnableStreamConfigsFetching' => true,
 			'MetricsPlatformEnableStreamConfigsMerging' => true,
 			MainConfigNames::DBname => 'bnwiki'
 		] );
