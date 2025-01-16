@@ -34,6 +34,10 @@
 		"MetricsPlatformEnableStreamConfigsMerging": {
 			"description": "Enable merging instrumentation configs with stream configs provided by the EventStreamConfig extension.",
 			"value": false
+		},
+		"MetricsPlatformEnableExperiments": {
+			"description": "Enable experiments. If no experiments are defined in $wgMetricsPlatformExperiments, then experiments are fetched from MPIC.",
+			"value": false
 		}
 	},
 	"HookHandlers": {

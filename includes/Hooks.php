@@ -34,6 +34,7 @@ class Hooks implements
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnableStreamConfigsFetching',
 		'MetricsPlatformEnableStreamConfigsMerging',
+		'MetricsPlatformEnableExperiments',
 		'MetricsPlatformEnableExperimentOverrides',
 	];
 
@@ -114,8 +115,14 @@ class Hooks implements
 	 * @param Skin $skin
 	 */
 	public function onBeforePageDisplay( $out, $skin ): void {
-		// Skip if the user is not logged in or is a temporary user.
-		if ( !$out->getUser()->isNamed() ) {
+		// Skip if:
+		//
+		// 1. Experiments are disabled; or
+		// 2. The user is not logged in or is a temporary user.
+		if (
+			!$this->options->get( 'MetricsPlatformEnableExperiments' ) ||
+			!$out->getUser()->isNamed()
+		) {
 			return;
 		}
 		$services = MediaWikiServices::getInstance();
