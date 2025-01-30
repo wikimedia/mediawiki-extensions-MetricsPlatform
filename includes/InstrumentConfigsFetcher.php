@@ -79,7 +79,7 @@ class InstrumentConfigsFetcher {
 		$cacheKey = ( $type === self::EXPERIMENT ) ? 'ExperimentConfigs' : 'InstrumentConfigs';
 
 		$result = $cache->getWithSetCallback(
-			$cache->makeKey( 'MetricsPlatform', $cacheKey, self::VERSION ),
+			$cache->makeGlobalKey( 'MetricsPlatform', $cacheKey, self::VERSION ),
 			$cache::TTL_MINUTE,
 			function () use ( $config, $endpoint, $fname ) {
 				$startTime = microtime( true );
