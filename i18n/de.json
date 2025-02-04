@@ -1,6 +1,8 @@
 {
 	"@metadata": {
-		"authors": []
+		"authors": [
+			"Brettchenweber"
+		]
 	},
-	"metricsplatform-desc": "Dies ist die Metrics Plattform-Erweiterung"
+	"metricsplatform-desc": "Dies ist die Metrics-Plattform-Erweiterung"
 }
