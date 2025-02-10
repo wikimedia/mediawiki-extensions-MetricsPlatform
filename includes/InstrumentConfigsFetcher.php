@@ -78,6 +78,10 @@ class InstrumentConfigsFetcher {
 		$endpoint = ( $type > 1 ) ? self::MPIC_API_EXPERIMENTS_ENDPOINT : self::MPIC_API_INSTRUMENTS_ENDPOINT;
 		$cacheKey = ( $type === self::EXPERIMENT ) ? 'ExperimentConfigs' : 'InstrumentConfigs';
 
+		$this->logger->debug(
+			'Start fetching ' . ( $type === self::EXPERIMENT ? 'experiment' : 'instrument' ) . ' configs'
+		);
+
 		$result = $cache->getWithSetCallback(
 			$cache->makeGlobalKey( 'MetricsPlatform', $cacheKey, self::VERSION ),
 			$cache::TTL_MINUTE,
@@ -126,13 +130,23 @@ class InstrumentConfigsFetcher {
 			]
 		);
 
-		return $this->postProcessResult( $result );
+		$this->logger->debug(
+			'End fetching ' . ( $type === self::EXPERIMENT ? 'experiment' : 'instrument' ) . ' configs'
+		);
+
+		$result = $this->postProcessResult( $result );
+		$nActiveConfigs = count( $result );
+
+		$this->logger->debug( "Fetched { $nActiveConfigs } active config(s)" );
+
+		return $result;
 	}
 
 	/**
 	 * Post-processes the result of successful request to MPIC by:
 	 *
 	 * 1. Filtering out disabled instruments/experiments (`status=0`)
+	 * 2. Extracting the sample config for the current wiki
 	 *
 	 * @param array $result An array of configs retrieved from MPIC
 	 *  TODO: Add a link to the latest response format specification
