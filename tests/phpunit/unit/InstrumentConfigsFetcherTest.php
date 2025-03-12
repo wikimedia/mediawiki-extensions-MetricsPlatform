@@ -82,8 +82,8 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			->willReturn( $httpRequest );
 
 		$this->statusFormatter->expects( $this->once() )
-			->method( 'getWikiText' )
-			->willReturn( '(foobar: error message)' );
+			->method( 'getPsr3MessageAndContext' )
+			->willReturn( [ 'error message', [] ] );
 
 		$fetcher = new InstrumentConfigsFetcher(
 			$this->mockOptions(),
@@ -108,8 +108,8 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			->willReturn( $httpRequest );
 
 		$this->statusFormatter->expects( $this->once() )
-			->method( 'getWikiText' )
-			->willReturn( '(error: message)' );
+			->method( 'getPsr3MessageAndContext' )
+			->willReturn( [ 'message', [] ] );
 
 		$fetcher = new InstrumentConfigsFetcher(
 			$this->mockOptions(),

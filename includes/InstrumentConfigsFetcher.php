@@ -6,7 +6,6 @@ use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Json\FormatJson;
 use MediaWiki\MainConfigNames;
-use MediaWiki\Status\Status;
 use MediaWiki\Status\StatusFormatter;
 use Psr\Log\LoggerInterface;
 use Wikimedia\ObjectCache\WANObjectCache;
@@ -97,7 +96,7 @@ class InstrumentConfigsFetcher {
 					$json = $request->getContent();
 				} else {
 					$errors = $status->getMessages( 'error' );
-					$this->logger->warning( $this->statusFormatter->getWikiText( Status::wrap( $status ),
+					$this->logger->warning( ...$this->statusFormatter->getPsr3MessageAndContext( $status,
 						[ 'error' => $errors, 'content' => $request->getContent() ] ) );
 
 					$labels = $this->getClientErrorLabels( $errors );
