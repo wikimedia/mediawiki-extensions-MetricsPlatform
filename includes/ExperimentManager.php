@@ -33,22 +33,9 @@ class ExperimentManager {
 				continue;
 			}
 
-			// Loop through an experiment's feature variants to aggregate each experiment's available bucket names
-			// prefixed with its feature variant name(s). Because feature variant values are generic (i.e. a string,
-			// an integer, or a boolean), the feature variant name is prefixed to all possible feature variant values to
-			// create meaningful, specific bucket names for all experiments.
-			$features = [];
-
-			foreach ( $experimentConfig['features'] as $featureName => $feature ) {
-				if ( array_key_exists( 'control', $feature ) ) {
-					$features[$featureName]['control'] = $feature['control'];
-				}
-				$features[$featureName]['values'] = $feature['values'];
-			}
-
 			$experiments[] = [
 				'name' => $experimentConfig['slug'],
-				'features' => $features,
+				'groups' => $experimentConfig['groups'],
 				'sampleConfig' => $sampleConfig
 			];
 
@@ -68,32 +55,30 @@ class ExperimentManager {
 	 * A user may or may not be enrolled into an experiment. If the user is enrolled in the experiment, then they are
 	 * assigned a bucket; otherwise they are marked an "unsampled."
 	 *
-	 * Currently, a bucket is equivalent to a variant/value pair. For example: an experiment, "foo", with one feature
-	 * variant "bar", which can have four values, `[ 1, 2, 3, 4 ]`, corresponds to four buckets:
+	 * Currently, a bucket is equivalent to a group name. For example: an experiment "foo" that has a 'control' and a
+	 * treatment group called `a_treatment_group`, corresponds to two buckets:
 	 *
 	 * ```
 	 * `foo` => [
-	 *   `bar` => [
-	 *     `values` => [
-	 *       1,
-	 *       2,
-	 *       3,
-	 *       4,
-	 *     ],
+	 *   `groups` => [
+	 *     `control`,
+	 * 	   `a_treatment_group`
 	 *   ],
 	 * ],
 	 * ```
 	 *
-	 * The result of enrolling the user into all active experiments is an array with three keys: `enrolled`, `assigned`,
-	 * and `features`.
+	 * The result of enrolling the user into all active experiments is an array with two keys: `enrolled` and `assigned`
 	 *
 	 * If the user is not enrolled in an experiment, then they are unsampled, and no other action is taken.
 	 *
 	 * If the user is enrolled in an experiment, then:
 	 *
 	 * 1. The experiment name will be added to the `enrolled` array
-	 * 2. The map of feature name to assigned feature value is merged into the `assigned` map; and
-	 * 3. The map of experiment name to feature names is merged into the `features` map
+	 * 2. A key-value pair composed of the experiment name and the assigned group will be added the `assigned` map
+	 * 3. The subject_id (created as hash('sha256', user->getUserId(), experimentName))
+	 *    will be added to the `subject_ids` map
+	 * 4. A key-value pair composed of the experiment name and the sampling_unit (`mw-user`)
+	 *    will be added to the `sampling_units` map
 	 *
 	 * In the example above, the result will look something like:
 	 *
@@ -103,13 +88,14 @@ class ExperimentManager {
 	 *     "foo",
 	 *   ],
 	 *   "assigned" => [
-	 *     "bar => 3",
+	 *     "foo" => "control",
 	 *   ],
-	 *   "features" => [
-	 *     "foo" => [
-	 *       "bar",
-	 *     ],
+	 * 	 "subject_ids" => [
+	 *     "foo" => "2b1138ed5e31c7f7093c211714c4b751f8b9ca863e3dc72ac53a28bef6c08e0d"
 	 *   ],
+	 *   "sampling_units" => [
+	 *     "foo" =>  "mw-user"
+	 *   ]
 	 * ]
 	 * ```
 	 *
@@ -117,14 +103,14 @@ class ExperimentManager {
 	 * (see `$wgMetricsPlatformEnableExperimentOverrides`) using the following format:
 	 *
 	 * ```
-	 * <experiment name>:<feature variant name>:<feature variant value>
+	 * <experiment name>:<group name>
 	 * ```
 	 *
 	 * e.g.
 	 *
-	 * * `donate-cta-ab-test:cta-color:red`
-	 * * `dark-mode-ab-test:dark-mode:true`
-	 * * `sticky-header-ab-test:show-sticky-header:false`
+	 * * `donate-cta-ab-test:cta-color`
+	 * * `dark-mode-ab-test:dark-mode`
+	 * * `sticky-header-ab-test:control`
 	 *
 	 * This override feature is only available for a single experiment at this time.
 	 *
@@ -148,37 +134,35 @@ class ExperimentManager {
 			$userHash = $this->userSplitterInstrumentation->getUserHash( $user->getId(), $experimentName );
 			$samplingRatio = $experiment['sampleConfig']['rate'];
 
-			foreach ( $experiment['features'] as $featureName => $feature ) {
-				$buckets = $this->castBuckets( $experiment['features'][$featureName]['values'] );
-
-				// Assign the correlation between experiment names and feature variant names in all cases.
-				// Note that an experiment can have multiple features to be tested.
-				$enrollment['features'][$experimentName][] = $featureName;
-
-				// If the user is forcing a particular bucket, use the override.
-				if (
-					isset( $overrides[$experimentName] ) &&
-					array_key_exists( $featureName, $overrides[$experimentName] )
-				) {
-					// If the overridden value is a legitimate bucket name, enroll the user
-					// and make the bucket assignment. If the overridden value does not match
-					// available bucket names, the user is not enrolled in the experiment.
-					if ( in_array( $overrides[$experimentName][$featureName], $buckets ) ) {
-						$enrollment['enrolled'][] = $experimentName;
-						$enrollment['assigned'][$featureName] = $overrides[$experimentName][$featureName];
-					}
-
-					// If the user is in sample, return the bucket name.
-				} elseif ( $this->userSplitterInstrumentation->isSampled( $samplingRatio, $buckets, $userHash ) ) {
+			$buckets = $experiment['groups'];
+			// If the user is forcing a particular bucket, use the override.
+			if (
+				isset( $overrides[$experimentName] ) &&
+				array_key_exists( $experimentName, $overrides )
+			) {
+				// If the overridden value is a legitimate bucket name, enroll the user
+				// and make the bucket assignment. If the overridden value does not match
+				// available bucket names, the user is not enrolled in the experiment.
+				if ( in_array( $overrides[$experimentName], $buckets ) ) {
 					$enrollment['enrolled'][] = $experimentName;
-					$assignedBucket = $this->userSplitterInstrumentation->getBucket( $buckets, $userHash );
-					$enrollment['assigned'][$featureName] = $this->castAsString( $assignedBucket );
-
-					// Otherwise, the user is unsampled.
-				} else {
-					$enrollment['assigned'][$featureName] = self::EXCLUDED_BUCKET_NAME;
+					$enrollment['assigned'][$experimentName] = $overrides[$experimentName];
 				}
+
+				// If the user is in sample, return the bucket name.
+			} elseif ( $this->userSplitterInstrumentation->isSampled( $samplingRatio, $buckets, $userHash ) ) {
+				$enrollment['enrolled'][] = $experimentName;
+				$assignedBucket = $this->userSplitterInstrumentation->getBucket( $buckets, $userHash );
+				$enrollment['assigned'][$experimentName] = $this->castAsString( $assignedBucket );
+
+				// Otherwise, the user is unsampled.
+			} else {
+				$enrollment['assigned'][$experimentName] = self::EXCLUDED_BUCKET_NAME;
 			}
+
+			// Anyway subject_ids and sampling_units will be included
+			$enrollment['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
+			$enrollment['sampling_units'][$experimentName] = 'mw-user';
+
 			// Dedupe the enrolled array which will have duplicate experiment names
 			// if an experiment has multiple features.
 			$enrollment['enrolled'] = array_unique( $enrollment['enrolled'] );
@@ -207,35 +191,20 @@ class ExperimentManager {
 	}
 
 	/**
-	 * Convert a boolean or integer values in a bucket to a string for comparison
-	 *
-	 * @param array $values
-	 * @return array
-	 */
-	private function castBuckets( array $values ): array {
-		$castValues = [];
-		foreach ( $values as $value ) {
-			$castValues[] = $this->castAsString( $value );
-		}
-		return $castValues;
-	}
-
-	/**
 	 * Get any experiment enrollment overrides from the request.
 	 *
 	 * Given raw experiment enrollment overrides in the form:
 	 *
 	 * ```
-	 * $en1:$fvn1:$fvv1;$en2:$fvn2:$fvv2;...
+	 * $en1:$gn1;$en2:$gn2;...
 	 * ```
 	 *
 	 * where:
 	 *
 	 * * `$en` is the experiment name
-	 * * `$fvn` is the feature variant name
-	 * * `$fvv` is the feature variant value
+	 * * `$gn` is the group name
 	 *
-	 * this function will return a map of experiment name to feature variant name/value pair in the same form as
+	 * this function will return a map of experiment name to group name pair in the same form as
 	 * {@link ExperimentManager::enrollUser()}.
 	 *
 	 * This method will return experiment enrollment overrides from the `mpo` querystring parameter and from the
@@ -272,12 +241,8 @@ class ExperimentManager {
 		$parts = explode( ';', $rawEnrollmentOverrides );
 
 		foreach ( $parts as $override ) {
-			// $key is the experiment name
-			[ $key, $value ] = explode( ':', $override, 2 );
-			$feature = explode( ':', $value, 2 );
-			$featureName = $feature[0];
-			$featureValue = $feature[1];
-			$result[$key][$featureName] = $featureValue;
+			[ $experimentName, $groupName ] = explode( ':', $override, 2 );
+			$result[$experimentName] = $groupName;
 		}
 
 		return $result;
