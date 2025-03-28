@@ -149,5 +149,11 @@ class Hooks implements
 		if ( $this->options->get( 'MetricsPlatformEnableExperimentOverrides' ) ) {
 			$out->addModules( 'ext.metricsPlatform' );
 		}
+
+		// The `ext.xLab` module contains the JS xLab SDK that is the API the feature code will use to get
+		// the experiments and the corresponding assigned group for the current user
+		if ( $this->options->get( 'MetricsPlatformEnableExperiments' ) ) {
+			$out->addModules( 'ext.xLab' );
+		}
 	}
 }

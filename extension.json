@@ -67,16 +67,35 @@
 					]
 				}
 			]
+		},
+		"ext.xLab": {
+			"localBasePath": "modules/ext.xLab",
+			"remoteExtPath": "MetricsPlatform/modules/ext.xLab",
+			"packageFiles": [
+				"index.js",
+				"Experiment.js",
+				{
+					"name": "config.json",
+					"config": [
+						"MetricsPlatformEnableExperiments"
+					]
+				}
+			],
+			"dependencies": [
+				"ext.eventLogging"
+			]
 		}
 	},
 	"QUnitTestModule": {
 		"localBasePath": "tests/qunit",
 		"remoteExtPath": "MetricsPlatform/tests/qunit",
 		"scripts": [
-			"ext.metricsPlatform/index.test.js"
+			"ext.metricsPlatform/index.test.js",
+			"ext.xLab/index.test.js"
 		],
 		"dependencies": [
-			"ext.metricsPlatform"
+			"ext.metricsPlatform",
+			"ext.xLab"
 		]
 	},
 	"MessagesDirs": {
