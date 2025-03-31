@@ -68,6 +68,9 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user'
+				],
+				'active_experiments' => [
+					'fruit'
 				]
 			],
 			[
@@ -88,14 +91,8 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		yield [
 			[
 				'enrolled' => [],
-				'assigned' => [
-					'dinner' => 'unsampled'
-				],
-				'subject_ids' => [
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513'
-				],
-				'sampling_units' => [
-					'dinner' => 'mw-user'
+				'active_experiments' => [
+					'dinner'
 				]
 			],
 			[
@@ -121,18 +118,20 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'assigned' => [
 					'fruit' => 'control',
-					'dessert' => 'control',
-					'dinner' => 'unsampled'
+					'dessert' => 'control'
 				],
 				'subject_ids' => [
 					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513'
+					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397'
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
-					'dessert' => 'mw-user',
-					'dinner' => 'mw-user'
+					'dessert' => 'mw-user'
+				],
+				'active_experiments' => [
+					'fruit',
+					'dinner',
+					'dessert'
 				]
 			],
 			static::getMultipleExperimentConfigs(),
@@ -173,6 +172,9 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user'
+				],
+				'active_experiments' => [
+					'fruit'
 				]
 			],
 			[
@@ -199,18 +201,20 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'assigned' => [
 					'fruit' => 'tropical',
-					'dessert' => 'gelato-scoops',
-					'dinner' => 'unsampled'
+					'dessert' => 'gelato-scoops'
 				],
 				'subject_ids' => [
 					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513'
+					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397'
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
-					'dessert' => 'mw-user',
-					'dinner' => 'mw-user'
+					'dessert' => 'mw-user'
+				],
+				'active_experiments' => [
+					'fruit',
+					'dinner',
+					'dessert'
 				]
 			],
 			$multipleExperimentConfigs,
@@ -226,18 +230,20 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'assigned' => [
 					'fruit' => 'tropical',
-					'dessert' => 'gelato-scoops',
-					'dinner' => 'unsampled'
+					'dessert' => 'gelato-scoops'
 				],
 				'subject_ids' => [
 					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513'
+					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397'
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
-					'dessert' => 'mw-user',
-					'dinner' => 'mw-user'
+					'dessert' => 'mw-user'
+				],
+				'active_experiments' => [
+					'fruit',
+					'dinner',
+					'dessert'
 				]
 			],
 			$multipleExperimentConfigs,
@@ -253,18 +259,20 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'assigned' => [
 					'fruit' => 'tropical',
-					'dessert' => 'control',
-					'dinner' => 'unsampled'
+					'dessert' => 'control'
 				],
 				'subject_ids' => [
 					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513'
+					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397'
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
-					'dessert' => 'mw-user',
-					'dinner' => 'mw-user'
+					'dessert' => 'mw-user'
+				],
+				'active_experiments' => [
+					'fruit',
+					'dinner',
+					'dessert'
 				]
 			],
 			$multipleExperimentConfigs,

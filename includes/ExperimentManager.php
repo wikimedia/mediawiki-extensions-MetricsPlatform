@@ -148,26 +148,28 @@ class ExperimentManager {
 					$enrollment['assigned'][$experimentName] = $overrides[$experimentName];
 				}
 
+				// subject_ids and sampling_units will be included
+				$enrollment['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
+				$enrollment['sampling_units'][$experimentName] = 'mw-user';
+
 				// If the user is in sample, return the bucket name.
 			} elseif ( $this->userSplitterInstrumentation->isSampled( $samplingRatio, $buckets, $userHash ) ) {
 				$enrollment['enrolled'][] = $experimentName;
 				$assignedBucket = $this->userSplitterInstrumentation->getBucket( $buckets, $userHash );
 				$enrollment['assigned'][$experimentName] = $this->castAsString( $assignedBucket );
 
-				// Otherwise, the user is unsampled.
-			} else {
-				$enrollment['assigned'][$experimentName] = self::EXCLUDED_BUCKET_NAME;
+				// subject_ids and sampling_units will be included
+				$enrollment['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
+				$enrollment['sampling_units'][$experimentName] = 'mw-user';
 			}
+			// Otherwise, the user is unsampled.
 
-			// Anyway subject_ids and sampling_units will be included
-			$enrollment['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
-			$enrollment['sampling_units'][$experimentName] = 'mw-user';
+			// Anyway the experiment will be added to the `active_experiments` property
+			$enrollment['active_experiments'][] = $experimentName;
 
-			// Dedupe the enrolled array which will have duplicate experiment names
-			// if an experiment has multiple features.
-			$enrollment['enrolled'] = array_unique( $enrollment['enrolled'] );
 			$experimentsByName = $enrollment;
 		}
+
 		return $experimentsByName;
 	}
 
