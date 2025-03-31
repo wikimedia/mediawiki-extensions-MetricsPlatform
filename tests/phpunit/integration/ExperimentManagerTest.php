@@ -15,6 +15,14 @@ use MediaWikiIntegrationTestCase;
  */
 class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
+	private const NULL_RESULT = [
+		'active_experiments' => [],
+		'enrolled' => [],
+		'assigned' => [],
+		'subject_ids' => [],
+		'sampling_units' => [],
+	];
+
 	private UserIdentity $user;
 	private WebRequest $request;
 
@@ -39,10 +47,10 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public static function provideGetUserExperimentsConfig(): Generator {
-		yield [ [], [] ];
+		yield [ self::NULL_RESULT, [] ];
 
 		yield [
-			[],
+			self::NULL_RESULT,
 			[
 				[
 					'slug' => 'dog-breeds',
@@ -90,10 +98,13 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
 		yield [
 			[
-				'enrolled' => [],
 				'active_experiments' => [
 					'dinner'
-				]
+				],
+				'enrolled' => [],
+				'assigned' => [],
+				'subject_ids' => [],
+				'sampling_units' => [],
 			],
 			[
 				[
@@ -142,10 +153,10 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 	public static function provideGetUserExperimentsConfigWithOverrides(): Generator {
 		$multipleExperimentConfigs = static::getMultipleExperimentConfigs();
 
-		yield [ [], [], 'seasons:winter' ];
+		yield [ self::NULL_RESULT, [], 'seasons:winter' ];
 
 		yield [
-			[],
+			self::NULL_RESULT,
 			[
 				[
 					'slug' => 'seasons',

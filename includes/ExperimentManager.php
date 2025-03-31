@@ -11,8 +11,6 @@ class ExperimentManager {
 	private array $experiments;
 	private bool $enableOverrides;
 
-	public const EXCLUDED_BUCKET_NAME = 'unsampled';
-
 	/**
 	 * The name of the querystring parameter or cookie to get experiment enrollment overrides from.
 	 */
@@ -49,25 +47,19 @@ class ExperimentManager {
 	 *
 	 * An experiment is considered to be active if:
 	 *
-	 * 1. It is marked as active in MPIC (i.e. `experiment.status=1`); and
+	 * 1. It is marked as active in xLab (i.e. `experiment.status=1`); and
 	 * 2. It has a sample rate of > 0.0
 	 *
 	 * A user may or may not be enrolled into an experiment. If the user is enrolled in the experiment, then they are
-	 * assigned a bucket; otherwise they are marked an "unsampled."
+	 * assigned a group.
 	 *
-	 * Currently, a bucket is equivalent to a group name. For example: an experiment "foo" that has a 'control' and a
-	 * treatment group called `a_treatment_group`, corresponds to two buckets:
+	 * The result of enrolling the user into all active experiments is an array with the following keys:
 	 *
-	 * ```
-	 * `foo` => [
-	 *   `groups` => [
-	 *     `control`,
-	 * 	   `a_treatment_group`
-	 *   ],
-	 * ],
-	 * ```
-	 *
-	 * The result of enrolling the user into all active experiments is an array with two keys: `enrolled` and `assigned`
+	 * * `active_experiments`
+	 * * `enrolled`
+	 * * `assigned`
+	 * * `subject_ids`
+	 * * `sampling_units`
 	 *
 	 * If the user is not enrolled in an experiment, then they are unsampled, and no other action is taken.
 	 *
@@ -75,15 +67,18 @@ class ExperimentManager {
 	 *
 	 * 1. The experiment name will be added to the `enrolled` array
 	 * 2. A key-value pair composed of the experiment name and the assigned group will be added the `assigned` map
-	 * 3. The subject_id (created as hash('sha256', user->getUserId(), experimentName))
-	 *    will be added to the `subject_ids` map
-	 * 4. A key-value pair composed of the experiment name and the sampling_unit (`mw-user`)
-	 *    will be added to the `sampling_units` map
+	 * 3. A key-value pair composed of the experiment name and the subject ID (created as
+	 *    `hash('sha256', user->getUserId(), experimentName)`) will be added to the `subject_ids` map
+	 * 4. A key-value pair composed of the experiment name and the sampling_unit (`mw-user`) will be added to the
+	 *    `sampling_units` map
 	 *
-	 * In the example above, the result will look something like:
+	 * For example:
 	 *
 	 * ```
 	 * [
+	 *   "active_experiments" => [
+	 *     "foo",
+	 *   ],
 	 *   "enrolled" => [
 	 *     "foo",
 	 *   ],
@@ -112,84 +107,64 @@ class ExperimentManager {
 	 * * `dark-mode-ab-test:dark-mode`
 	 * * `sticky-header-ab-test:control`
 	 *
-	 * This override feature is only available for a single experiment at this time.
-	 *
 	 * @param UserIdentity $user
 	 * @param WebRequest $request
-	 * @return array<string, string>
+	 * @return array
+	 * @phan-return array{active_experiments:string[],enrolled:string[],assigned:array{string,string},subject_ids:array{string,string},sampling_units:array{string,'mw-user'}}
 	 */
 	public function enrollUser( UserIdentity $user, WebRequest $request ): array {
-		$experimentsByName = [];
-		$enrollment = [];
-		$enrollment['enrolled'] = [];
+		$result = [
+			'active_experiments' => [],
+			'enrolled' => [],
+			'assigned' => [],
+			'subject_ids' => [],
+			'sampling_units' => [],
+		];
 
 		// Parse forceVariant query parameter as an override for bucket assignment.
 		$overrides = $this->getEnrollmentOverrides( $request );
 
-		// Of the experiments missing from the user's config, populate the user's experiment names and buckets.
+		// Of the experiments missing from the user's config, populate the user's experiment names and groups.
 		foreach ( $this->experiments as $experiment ) {
 			$experimentName = $experiment['name'];
 
-			// Get the user's hash (with experiment name) to assign buckets deterministically.
+			// Get the user's hash (with experiment name) to assign groups deterministically.
 			$userHash = $this->userSplitterInstrumentation->getUserHash( $user->getId(), $experimentName );
 			$samplingRatio = $experiment['sampleConfig']['rate'];
 
-			$buckets = $experiment['groups'];
-			// If the user is forcing a particular bucket, use the override.
+			$groups = $experiment['groups'];
+
+			// If the user is forcing a particular group and the group is a valid group for the
+			// experiment, then use it.
 			if (
 				isset( $overrides[$experimentName] ) &&
 				array_key_exists( $experimentName, $overrides )
 			) {
-				// If the overridden value is a legitimate bucket name, enroll the user
-				// and make the bucket assignment. If the overridden value does not match
-				// available bucket names, the user is not enrolled in the experiment.
-				if ( in_array( $overrides[$experimentName], $buckets ) ) {
-					$enrollment['enrolled'][] = $experimentName;
-					$enrollment['assigned'][$experimentName] = $overrides[$experimentName];
+				if ( in_array( $overrides[$experimentName], $groups ) ) {
+					$result['enrolled'][] = $experimentName;
+					$result['assigned'][$experimentName] = $overrides[$experimentName];
+
+					// subject_ids and sampling_units will be included
+					$result['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
+					$result['sampling_units'][$experimentName] = 'mw-user';
 				}
 
-				// subject_ids and sampling_units will be included
-				$enrollment['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
-				$enrollment['sampling_units'][$experimentName] = 'mw-user';
-
-				// If the user is in sample, return the bucket name.
-			} elseif ( $this->userSplitterInstrumentation->isSampled( $samplingRatio, $buckets, $userHash ) ) {
-				$enrollment['enrolled'][] = $experimentName;
-				$assignedBucket = $this->userSplitterInstrumentation->getBucket( $buckets, $userHash );
-				$enrollment['assigned'][$experimentName] = $this->castAsString( $assignedBucket );
+			// If the user is in sample for the experiment, then assign them to a group.
+			} elseif ( $this->userSplitterInstrumentation->isSampled( $samplingRatio, $groups, $userHash ) ) {
+				$result['enrolled'][] = $experimentName;
+				$result['assigned'][$experimentName] =
+					$this->userSplitterInstrumentation->getBucket( $groups, $userHash );
 
 				// subject_ids and sampling_units will be included
-				$enrollment['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
-				$enrollment['sampling_units'][$experimentName] = 'mw-user';
+				$result['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
+				$result['sampling_units'][$experimentName] = 'mw-user';
 			}
-			// Otherwise, the user is unsampled.
 
 			// Anyway the experiment will be added to the `active_experiments` property
-			$enrollment['active_experiments'][] = $experimentName;
-
-			$experimentsByName = $enrollment;
+			$result['active_experiments'][] = $experimentName;
 		}
 
-		return $experimentsByName;
-	}
-
-	/**
-	 * Convert a boolean or integer to a string for concatenation
-	 *
-	 * @param mixed $value
-	 * @return string
-	 */
-	private function castAsString( $value ): string {
-		if ( is_bool( $value ) ) {
-			return $value ? 'true' : 'false';
-		}
-		if ( is_int( $value ) ) {
-			return strval( $value );
-		}
-		if ( is_string( $value ) ) {
-			return $value;
-		}
-		return '';
+		return $result;
 	}
 
 	/**
