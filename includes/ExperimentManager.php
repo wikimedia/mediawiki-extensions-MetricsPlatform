@@ -119,6 +119,7 @@ class ExperimentManager {
 			'assigned' => [],
 			'subject_ids' => [],
 			'sampling_units' => [],
+			'overrides' => []
 		];
 
 		// Parse forceVariant query parameter as an override for bucket assignment.
@@ -138,17 +139,17 @@ class ExperimentManager {
 			// experiment, then use it.
 			if (
 				isset( $overrides[$experimentName] ) &&
-				array_key_exists( $experimentName, $overrides )
+				array_key_exists( $experimentName, $overrides ) &&
+				in_array( $overrides[$experimentName], $groups )
 			) {
-				if ( in_array( $overrides[$experimentName], $groups ) ) {
-					$result['enrolled'][] = $experimentName;
-					$result['assigned'][$experimentName] = $overrides[$experimentName];
+				$result['enrolled'][] = $experimentName;
+				$result['assigned'][$experimentName] = $overrides[$experimentName];
+				$result['overrides'][] = $experimentName;
 
-					// subject_ids and sampling_units will be included
-					$result['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
-					$result['sampling_units'][$experimentName] = 'mw-user';
-				}
-
+				// subject_ids and sampling_units will be included
+				$result['subject_ids'][$experimentName] =
+					$this->userSplitterInstrumentation->getSubjectId( $user->getId(), $experimentName );
+				$result['sampling_units'][$experimentName] = 'mw-user';
 			// If the user is in sample for the experiment, then assign them to a group.
 			} elseif ( $this->userSplitterInstrumentation->isSampled( $samplingRatio, $groups, $userHash ) ) {
 				$result['enrolled'][] = $experimentName;
@@ -156,7 +157,8 @@ class ExperimentManager {
 					$this->userSplitterInstrumentation->getBucket( $groups, $userHash );
 
 				// subject_ids and sampling_units will be included
-				$result['subject_ids'][$experimentName] = hash( 'sha256', $user->getId() . $experimentName );
+				$result['subject_ids'][$experimentName] =
+					$this->userSplitterInstrumentation->getSubjectId( $user->getId(), $experimentName );
 				$result['sampling_units'][$experimentName] = 'mw-user';
 			}
 

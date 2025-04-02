@@ -36,8 +36,19 @@ class UserSplitterInstrumentation {
 	 * @return float
 	 */
 	public function getUserHash( int $userId, string $experimentName ): float {
-		$userIdExperimentName = $userId . $experimentName;
-		return intval( substr( md5( $userIdExperimentName ), 0, 6 ), 16 ) / ( 0xffffff + 1 );
+		$subjectId = $this->getSubjectId( $userId, $experimentName );
+		return intval( substr( $subjectId, 0, 6 ), 16 ) / ( 0xffffff + 1 );
+	}
+
+	/**
+	 * Get hash of a user ID as a 'sha256' hash concatenated with an experiment name.
+	 *
+	 * @param int $userId
+	 * @param string $experimentName
+	 * @return string
+	 */
+	public function getSubjectId( int $userId, string $experimentName ): string {
+		return hash( 'sha256', $userId . $experimentName );
 	}
 
 	/**

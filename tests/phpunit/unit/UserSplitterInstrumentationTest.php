@@ -150,14 +150,14 @@ class UserSplitterInstrumentationTest extends MediaWikiUnitTestCase {
 
 	public static function provideGetUserHash(): array {
 		return [
-			'Valid: 1' => [ 0.701, 3, 'dog' ],
-			'Valid: 10' => [ 0.701, 30, 'cat' ],
-			'Valid: 100' => [ 0.822, 108, 'tiger' ],
-			'Valid: 1000' => [ 0.4, 3803, 'elephant' ],
-			'Valid: 10000' => [ 0.087, 88088, 'giraffe' ],
-			'Valid: 100000' => [ 0.176, 418975, 'penguin' ],
-			'Valid: 1000000' => [ 0.109, 5374208, 'bear' ],
-			'Valid: 10000000' => [ 0.92, 67123159, 'horse' ],
+			'Valid: 1' => [ 0.051, 3, 'dog' ],
+			'Valid: 10' => [ 0.408, 30, 'cat' ],
+			'Valid: 100' => [ 0.358, 108, 'tiger' ],
+			'Valid: 1000' => [ 0.015, 3803, 'elephant' ],
+			'Valid: 10000' => [ 0.035, 88088, 'giraffe' ],
+			'Valid: 100000' => [ 0.447, 418975, 'penguin' ],
+			'Valid: 1000000' => [ 0.501, 5374208, 'bear' ],
+			'Valid: 10000000' => [ 0.988, 67123159, 'horse' ],
 		];
 	}
 
