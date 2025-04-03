@@ -4,18 +4,18 @@ const c = mw.config.get.bind( mw.config );
 const Experiment = require( './Experiment.js' );
 
 /**
- * @typedef {Object} Config
- * @property {boolean} MetricsPlatformEnableExperiments
- */
-
-/** @type {Config} */
-const config = require( './config.json' );
-
-/**
- * Description
+ * Gets the experiment enrollment details for the experiment whose name is passed
+ * as a parameter
+ * This experiment enrollment will contain the name of the experiment and the group
+ * the user has been assigned to (this value will be null in the case either the
+ * experiment doesn't exist or the user is not in sampled for that experiment)
+ * The assigned group will be also `null` when `MetricsPlatformEnableExperiments`
+ * is falsy
  *
  * @param {string} experimentName The experiment name
- * @return {Experiment} The experiment whose name has been passed as parameter
+ * @return {Experiment} The experiment enrollment details for the experiment whose
+ * name has been passed as a parameter
+ * @memberOf mw.xLab
  */
 function getExperiment( experimentName ) {
 	const userExperiments = c( 'wgMetricsPlatformUserExperiments' );
@@ -31,9 +31,9 @@ function getExperiment( experimentName ) {
 	return new Experiment( experimentName, assignedGroup );
 }
 
-mw.xLab = {};
-
-// JS xLab API
-if ( config.MetricsPlatformEnableExperiments || window.QUnit ) {
-	mw.xLab.getExperiment = getExperiment;
-}
+/**
+ * @namespace mw.xLab
+ */
+mw.xLab = {
+	getExperiment
+};

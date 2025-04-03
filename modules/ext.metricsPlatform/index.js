@@ -3,9 +3,13 @@ const COOKIE_NAME = 'mpo';
 /**
  * @typedef {Object} Config
  * @property {boolean} MetricsPlatformEnableExperimentOverrides
+ * @ignore
  */
 
-/** @type {Config} */
+/**
+ * @type {Config}
+ * @ignore
+ */
 const config = require( './config.json' );
 
 function setCookieAndReload( value ) {
@@ -24,6 +28,7 @@ function setCookieAndReload( value ) {
  * @param {string} experimentName
  * @param {string} featureVariantName
  * @param {string} featureVariantValue
+ * @memberOf mw.metricsPlatform
  */
 function overrideExperimentEnrollment(
 	experimentName,
@@ -52,11 +57,16 @@ function overrideExperimentEnrollment(
 
 /**
  * Clears all experiment enrollment overrides and reloads the current URL.
+ *
+ * @memberOf mw.metricsPlatform
  */
 function clearExperimentEnrollmentOverrides() {
 	setCookieAndReload( null );
 }
 
+/**
+ * @namespace mw.metricsPlatform
+ */
 mw.metricsPlatform = {};
 
 if ( config.MetricsPlatformEnableExperimentOverrides || window.QUnit ) {

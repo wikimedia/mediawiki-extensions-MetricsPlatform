@@ -1,5 +1,7 @@
-// Test cases when the user is not logged-in (wgMetricsPlatformUserExperiments will be 'undefined')
-QUnit.module( 'ext.xLab/Experiment - User is not logged-in', {
+// Test cases when the user is not logged-in or
+// `MetricsPlatformEnableExperiments` is falsy
+// (wgMetricsPlatformUserExperiments will be 'undefined')
+QUnit.module( 'ext.xLab/Experiment - User is not logged-in or MetricsPlatformEnableExperiments is falsy', {
 	beforeEach: function () {
 		mw.config.set( 'wgMetricsPlatformUserExperiments', undefined );
 	}
@@ -13,7 +15,7 @@ QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( a
 } );
 
 // Test cases when the user is logged-in and there are no experiments
-// (wgMetricsPlatformUserExperiments will be an empty array')
+// (wgMetricsPlatformUserExperiments will contain only empty arrays')
 QUnit.module( 'ext.xLab/Experiment - User is logged-in and there are no experiments', {
 	beforeEach: function () {
 		mw.config.set( 'wgMetricsPlatformUserExperiments', {
@@ -36,8 +38,42 @@ QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( a
 	assert.strictEqual( experiment.getAssignedGroup(), null );
 } );
 
-// Test cases for when there are experiments where the user is enrolled
-QUnit.module( 'ext.xLab/Experiment - User is logged-in and there are experiments', {
+// Test cases when the user is logged-in, there are experiments but the
+// user is not enrolled for any of them
+QUnit.module( 'ext.xLab/Experiment - User is logged-in, there are experiments but not enrollments', {
+	beforeEach: function () {
+		mw.config.set( 'wgMetricsPlatformUserExperiments', {
+			/* eslint-disable-next-line camelcase */
+			active_experiments: [
+				'one_experiment',
+				'other_experiment'
+			],
+			enrolled: [],
+			assigned: [],
+			/* eslint-disable-next-line camelcase */
+			subject_ids: [],
+			/* eslint-disable-next-line camelcase */
+			sampling_units: []
+		} );
+	}
+} );
+
+QUnit.test( 'getExperiment() - The experiment doesn\'t exist', ( assert ) => {
+	const experiment = mw.xLab.getExperiment( 'an_experiment_that_doesnt_exist' );
+
+	assert.strictEqual( experiment.isEnrolled(), false );
+	assert.strictEqual( experiment.getAssignedGroup(), null );
+} );
+
+QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( assert ) => {
+	const experiment = mw.xLab.getExperiment( 'one_experiment' );
+
+	assert.strictEqual( experiment.isEnrolled(), false );
+	assert.strictEqual( experiment.getAssignedGroup(), null );
+} );
+
+// Test cases when there are experiments where the user is enrolled
+QUnit.module( 'ext.xLab/Experiment - User is logged-in and enrolled in some experiments', {
 	beforeEach: function () {
 		mw.config.set( 'wgMetricsPlatformUserExperiments', {
 			enrolled: [

@@ -2,7 +2,8 @@
 	"name": "MetricsPlatform",
 	"private": true,
 	"scripts": {
-		"test": "grunt test"
+		"test": "grunt test",
+		"doc": "jsdoc -c jsdoc.json"
 	},
 	"devDependencies": {
 		"eslint-config-wikimedia": "0.29.1",
@@ -10,6 +11,8 @@
 		"grunt-banana-checker": "0.13.0",
 		"grunt-eslint": "24.3.0",
 		"grunt-stylelint": "0.20.1",
+		"jsdoc": "4.0.4",
+		"jsdoc-wmf-theme": "1.1.0",
 		"stylelint-config-wikimedia": "0.18.0"
 	},
 	"eslintIgnore": [
