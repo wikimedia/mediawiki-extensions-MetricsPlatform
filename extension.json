@@ -55,19 +55,6 @@
 		"BeforePageDisplay": "main"
 	},
 	"ResourceModules": {
-		"ext.metricsPlatform": {
-			"localBasePath": "modules/ext.metricsPlatform",
-			"remoteExtPath": "MetricsPlatform/modules/ext.metricsPlatform",
-			"packageFiles": [
-				"index.js",
-				{
-					"name": "config.json",
-					"config": [
-						"MetricsPlatformEnableExperimentOverrides"
-					]
-				}
-			]
-		},
 		"ext.xLab": {
 			"localBasePath": "modules/ext.xLab",
 			"remoteExtPath": "MetricsPlatform/modules/ext.xLab",
@@ -77,7 +64,7 @@
 				{
 					"name": "config.json",
 					"config": [
-						"MetricsPlatformEnableExperiments"
+						"MetricsPlatformEnableExperimentOverrides"
 					]
 				}
 			],
@@ -90,11 +77,9 @@
 		"localBasePath": "tests/qunit",
 		"remoteExtPath": "MetricsPlatform/tests/qunit",
 		"scripts": [
-			"ext.metricsPlatform/index.test.js",
 			"ext.xLab/index.test.js"
 		],
 		"dependencies": [
-			"ext.metricsPlatform",
 			"ext.xLab"
 		]
 	},

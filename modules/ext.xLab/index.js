@@ -1,7 +1,20 @@
 'use strict';
 
+const COOKIE_NAME = 'mpo';
 const c = mw.config.get.bind( mw.config );
 const Experiment = require( './Experiment.js' );
+
+/**
+ * @typedef {Object} Config
+ * @property {boolean} MetricsPlatformEnableExperimentOverrides
+ * @ignore
+ */
+
+/**
+ * @type {Config}
+ * @ignore
+*/
+const config = require( './config.json' );
 
 /**
  * Gets the experiment enrollment details for the experiment whose name is passed
@@ -31,9 +44,80 @@ function getExperiment( experimentName ) {
 	return new Experiment( experimentName, assignedGroup );
 }
 
+function setCookieAndReload( value ) {
+	mw.cookie.set( COOKIE_NAME, value );
+
+	// Reloading the window will break the QUnit unit tests. Only do so if we're not in a QUnit
+	// testing environment.
+	if ( !window.QUnit ) {
+		window.location.reload();
+	}
+}
+
+/**
+ * Overrides an experiment enrollment and reloads the current URL.
+ *
+ * @param {string} experimentName The name of the experiment
+ * @param {string} groupName The assigned group that will override the assigned one
+ * @memberOf mw.xLab
+ */
+function overrideExperimentGroup(
+	experimentName,
+	groupName
+) {
+	const rawOverrides = mw.cookie.get( COOKIE_NAME, null, '' );
+	const part = `${ experimentName }:${ groupName }`;
+
+	if ( rawOverrides === '' ) {
+		// If the cookie isn't set, then the value of the cookie is the given override.
+		setCookieAndReload( part );
+	} else if ( rawOverrides.indexOf( `${ experimentName }` ) === -1 ) {
+		// If the cookie is set but doesn't have an override for the given experiment name/group
+		// variant pair, then append the given override.
+		setCookieAndReload( `${ rawOverrides };${ part }` );
+	} else {
+		setCookieAndReload( rawOverrides.replace(
+			new RegExp( `${ experimentName }:\\w+?(?=;|$)` ),
+			part
+		) );
+	}
+}
+
+/**
+ * Clears enrollment overrides for a specific experiment and reloads the current URL.
+ *
+ * @param {string} experimentName Name of the experiment whose enrollment will be cleared
+ * @memberOf mw.xLab
+ */
+function clearExperimentOverride( experimentName ) {
+	const rawOverrides = mw.cookie.get( COOKIE_NAME, null, '' );
+	const part = null;
+
+	setCookieAndReload( rawOverrides.replace(
+		new RegExp( `${ experimentName }:\\w+?(?=;|$)` ),
+		part
+	) );
+}
+
+/**
+ * Clears all experiment enrollment overrides and reloads the current URL.
+ *
+ * @memberOf mw.xLab
+ */
+function clearExperimentOverrides() {
+	setCookieAndReload( null );
+}
+
 /**
  * @namespace mw.xLab
  */
 mw.xLab = {
 	getExperiment
 };
+
+// JS overriding experimentation feature
+if ( config.MetricsPlatformEnableExperimentOverrides || window.QUnit ) {
+	mw.xLab.overrideExperimentGroup = overrideExperimentGroup;
+	mw.xLab.clearExperimentOverride = clearExperimentOverride;
+	mw.xLab.clearExperimentOverrides = clearExperimentOverrides;
+}

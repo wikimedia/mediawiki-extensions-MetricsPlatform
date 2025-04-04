@@ -142,16 +142,11 @@ class Hooks implements
 			$experimentManager->enrollUser( $out->getUser(), $out->getRequest() )
 		);
 
-		// Optimization:
-		//
-		// The `ext.metricsPlatform` module only contains a QA-related function right now. Only send the module to the
-		// browser when we allow experiment enrollment overrides.
-		if ( $this->options->get( 'MetricsPlatformEnableExperimentOverrides' ) ) {
-			$out->addModules( 'ext.metricsPlatform' );
-		}
-
 		// The `ext.xLab` module contains the JS xLab SDK that is the API the feature code will use to get
 		// the experiments and the corresponding assigned group for the current user
+		//
+		// The `ext.xLab` module also contains some QA-related functions. Those functions are sent to the
+		// browser when we allow experiment enrollment overrides via `MetricsPlatformEnableExperimentOverrides`
 		$out->addModules( 'ext.xLab' );
 	}
 }

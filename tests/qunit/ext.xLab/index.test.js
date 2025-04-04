@@ -124,3 +124,45 @@ QUnit.test( 'getExperiment() - The user is enrolled in this experiment', ( asser
 	assert.strictEqual( experiment.isEnrolled(), true );
 	assert.strictEqual( experiment.getAssignedGroup(), 'tropical' );
 } );
+
+// Test cases for the overriding feature
+QUnit.module( 'ext.xLab', {
+	beforeEach() {
+		this.originalMPOCookie = mw.cookie.get( 'mpo' );
+
+		mw.cookie.set( 'mpo', null );
+	},
+
+	afterEach() {
+		mw.cookie.set( 'mpo', this.originalMPOCookie );
+	}
+} );
+
+QUnit.test( 'overrideExperimentGroup() - single call', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:bar' );
+} );
+
+QUnit.test( 'overrideExperimentGroup() - multiple calls', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+	mw.xLab.overrideExperimentGroup( 'qux', 'quux' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:bar;qux:quux' );
+} );
+
+QUnit.test( 'overrideExperimentGroup() - multiple identical calls', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+	mw.xLab.overrideExperimentGroup( 'qux', 'quux' );
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+	mw.xLab.overrideExperimentGroup( 'qux', 'quux' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:bar;qux:quux' );
+} );
+
+QUnit.test( 'overrideExperimentGroup() - multiple calls with different $groupName', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+	mw.xLab.overrideExperimentGroup( 'foo', 'baz' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:baz' );
+} );
