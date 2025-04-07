@@ -5,21 +5,44 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 use MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation;
 use MediaWiki\Request\WebRequest;
 use MediaWiki\User\UserIdentity;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Wikimedia\MetricsPlatform\MetricsClient;
 
-class ExperimentManager {
+class ExperimentManager implements LoggerAwareInterface {
 	private UserSplitterInstrumentation $userSplitterInstrumentation;
 	private array $experiments;
+	private array $experimentEnrollments;
+	private MetricsClient $metricsClient;
 	private bool $enableOverrides;
+	private LoggerInterface $logger;
 
 	/**
 	 * The name of the querystring parameter or cookie to get experiment enrollment overrides from.
 	 */
 	public const OVERRIDE_PARAM_NAME = 'mpo';
 
-	public function __construct( array $experimentConfigs, bool $enableOverrides ) {
+	/**
+	 * Constructs a new Experiment Manager derived from
+	 * config or fetched from xLab
+	 *
+	 * @param array $experimentConfigs
+	 * @param bool $enableOverrides
+	 * @param MetricsClient $metricsClient
+	 * @param ?LoggerInterface $logger
+	 */
+	public function __construct(
+		array $experimentConfigs,
+		bool $enableOverrides,
+		MetricsClient $metricsClient,
+		?LoggerInterface $logger = null
+	) {
 		$this->userSplitterInstrumentation = new UserSplitterInstrumentation();
 		$this->initialize( $experimentConfigs );
 		$this->enableOverrides = $enableOverrides;
+		$this->metricsClient = $metricsClient;
+		$this->logger = $logger ?? new NullLogger();
 	}
 
 	private function initialize( array $experimentConfigs ): void {
@@ -42,6 +65,62 @@ class ExperimentManager {
 		$this->experiments = $experiments;
 	}
 
+	private function setExperimentEnrollments( array $experimentEnrollments ): void {
+		$this->experimentEnrollments = $experimentEnrollments;
+	}
+
+	public function getExperimentEnrollments(): array {
+		return $this->experimentEnrollments;
+	}
+
+	/**
+	 * Get the current user's experiment object.
+	 *
+	 * @param string $experimentName
+	 * @return Experiment
+	 */
+	public function getExperiment( string $experimentName ): Experiment {
+		$isExperimentDefined = array_filter(
+			$this->experiments,
+			static function ( $experiment ) use ( $experimentName ) {
+				return $experiment['name'] === $experimentName;
+			}
+		);
+		$userExperimentConfig = $isExperimentDefined ? $this->getCurrentUserExperiment( $experimentName ) : null;
+
+		if ( $userExperimentConfig === null ) {
+			$this->logger->info( 'The ' . $experimentName . ' experiment is not registered. ' .
+				'Is the experiment configured and running?' );
+		}
+		return new Experiment(
+			$this->metricsClient,
+			$userExperimentConfig
+		);
+	}
+
+	/**
+	 * Get the current user's experiment enrollment details.
+	 *
+	 * @param string $experimentName
+	 * @return array
+	 */
+	private function getCurrentUserExperiment( string $experimentName ): array {
+		if ( in_array( $experimentName, $this->experimentEnrollments['active_experiments'], true ) ||
+			in_array( $experimentName, $this->experimentEnrollments['enrolled'], true )
+		) {
+			return [
+				'enrolled' => $experimentName,
+				'assigned' => $this->experimentEnrollments['assigned'][ $experimentName ],
+				'subject_id' => $this->experimentEnrollments['subject_ids'][ $experimentName ],
+				'sampling_unit' => $this->experimentEnrollments['sampling_units'][ $experimentName ],
+				'coordinator' => in_array( $experimentName, $this->experimentEnrollments['overrides'] )
+					? 'forced'
+					: 'xLab'
+			];
+		}
+		return [];
+	}
+
 	/**
 	 * Try to enroll the user into all active experiments.
 	 *
@@ -60,6 +139,7 @@ class ExperimentManager {
 	 * * `assigned`
 	 * * `subject_ids`
 	 * * `sampling_units`
+	 * * `overrides`
 	 *
 	 * If the user is not enrolled in an experiment, then they are unsampled, and no other action is taken.
 	 *
@@ -90,6 +170,9 @@ class ExperimentManager {
 	 *   ],
 	 *   "sampling_units" => [
 	 *     "foo" =>  "mw-user"
+	 *   ],
+	 *   "overrides" => [
+	 *     "foo",
 	 *   ]
 	 * ]
 	 * ```
@@ -109,10 +192,8 @@ class ExperimentManager {
 	 *
 	 * @param UserIdentity $user
 	 * @param WebRequest $request
-	 * @return array
-	 * @phan-return array{active_experiments:string[],enrolled:string[],assigned:array{string,string},subject_ids:array{string,string},sampling_units:array{string,'mw-user'}}
 	 */
-	public function enrollUser( UserIdentity $user, WebRequest $request ): array {
+	public function enrollUser( UserIdentity $user, WebRequest $request ): void {
 		$result = [
 			'active_experiments' => [],
 			'enrolled' => [],
@@ -165,8 +246,7 @@ class ExperimentManager {
 			// Anyway the experiment will be added to the `active_experiments` property
 			$result['active_experiments'][] = $experimentName;
 		}
-
-		return $result;
+		$this->setExperimentEnrollments( $result );
 	}
 
 	/**
@@ -225,5 +305,9 @@ class ExperimentManager {
 		}
 
 		return $result;
+	}
+
+	public function setLogger( LoggerInterface $logger ): void {
+		$this->logger = $logger;
 	}
 }

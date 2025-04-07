@@ -3,7 +3,9 @@
 namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
 use MediaWiki\Config\Config;
+use MediaWiki\Extension\EventLogging\EventLogging;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use Psr\Log\LoggerInterface;
 use Wikimedia\Assert\Assert;
 
 /**
@@ -12,8 +14,13 @@ use Wikimedia\Assert\Assert;
 class ExperimentManagerFactory {
 	private InstrumentConfigsFetcher $configsFetcher;
 	private Config $config;
+	private LoggerInterface $logger;
 
-	public function __construct( Config $config, InstrumentConfigsFetcher $configsFetcher ) {
+	public function __construct(
+		Config $config,
+		InstrumentConfigsFetcher $configsFetcher,
+		LoggerInterface $logger
+	) {
 		Assert::parameter(
 			$config->has( 'MetricsPlatformEnableExperimentOverrides' ),
 			'$config',
@@ -22,6 +29,7 @@ class ExperimentManagerFactory {
 
 		$this->config = $config;
 		$this->configsFetcher = $configsFetcher;
+		$this->logger = $logger;
 	}
 
 	/**
@@ -37,7 +45,9 @@ class ExperimentManagerFactory {
 
 		return new ExperimentManager(
 			$experimentConfigs,
-			$this->config->get( 'MetricsPlatformEnableExperimentOverrides' )
+			$this->config->get( 'MetricsPlatformEnableExperimentOverrides' ),
+			EventLogging::getMetricsPlatformClient(),
+			$this->logger
 		);
 	}
 }

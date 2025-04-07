@@ -80,10 +80,14 @@ class Hooks implements BeforePageDisplayHook {
 
 		$experimentManager = $this->experimentManagerFactory->newInstance();
 
+		// Enroll the current user into active experiments.
+		// Sets the experiment config in PHP for the user's experiment enrollment data.
+		$experimentManager->enrollUser( $out->getUser(), $out->getRequest() );
+
 		// Set the JS config variable for the user's experiment enrollment data.
 		$out->addJsConfigVars(
 			'wgMetricsPlatformUserExperiments',
-			$experimentManager->enrollUser( $out->getUser(), $out->getRequest() )
+			$experimentManager->getExperimentEnrollments()
 		);
 
 		// The `ext.xLab` module contains the JS xLab SDK that is the API the feature code will use to get

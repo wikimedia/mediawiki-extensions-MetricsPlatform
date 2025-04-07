@@ -13,7 +13,8 @@
 	"requires": {
 		"MediaWiki": ">= 1.44",
 		"extensions": {
-			"EventStreamConfig": "*"
+			"EventStreamConfig": "*",
+			"EventLogging": "*"
 		}
 	},
 	"AutoloadNamespaces": {

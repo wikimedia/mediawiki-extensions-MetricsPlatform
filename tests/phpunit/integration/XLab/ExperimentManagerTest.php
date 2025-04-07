@@ -3,12 +3,14 @@
 namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration\XLab;
 
 use Generator;
+use MediaWiki\Extension\MetricsPlatform\XLab\Experiment;
 use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
 use MediaWiki\Request\FauxRequest;
 use MediaWiki\Request\WebRequest;
 use MediaWiki\User\UserIdentity;
 use MediaWiki\User\UserIdentityValue;
 use MediaWikiIntegrationTestCase;
+use Wikimedia\MetricsPlatform\MetricsClient;
 
 /**
  * @covers \MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager
@@ -26,12 +28,14 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 
 	private UserIdentity $user;
 	private WebRequest $request;
+	private MetricsClient $mockMetricsClient;
 
 	public function setUp(): void {
 		parent::setUp();
 
 		$this->user = new UserIdentityValue( 123, self::class );
 		$this->request = new FauxRequest();
+		$this->mockMetricsClient = $this->createMock( MetricsClient::class );
 	}
 
 	/**
@@ -42,7 +46,14 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		array $experiments,
 		string $message = ''
 	) {
-		$actual = ( new ExperimentManager( $experiments, false ) )->enrollUser( $this->user, $this->request );
+		$experiment = new ExperimentManager(
+			$experiments,
+			false,
+			$this->mockMetricsClient
+		);
+		$experiment->enrollUser( $this->user, $this->request );
+
+		$actual = $experiment->getExperimentEnrollments();
 
 		$this->assertArrayEquals( $expected, $actual, false, false, $message );
 	}
@@ -337,9 +348,47 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 	) {
 		$this->request->setCookie( ExperimentManager::OVERRIDE_PARAM_NAME, $overrides );
 
-		$actual = ( new ExperimentManager( $experiments, true ) )->enrollUser( $this->user, $this->request );
+		$experimentManager = new ExperimentManager(
+			$experiments,
+			true,
+			$this->mockMetricsClient
+		);
+		$experimentManager->enrollUser( $this->user, $this->request );
+
+		$actual = $experimentManager->getExperimentEnrollments();
 
 		$this->assertArrayEquals( $expected, $actual, false, false, $message );
+	}
+
+	public function testSetGetExperimentEnrollments() {
+		$experimentManager = new ExperimentManager(
+			$this->getMultipleExperimentConfigs(),
+			false,
+			$this->mockMetricsClient );
+		$experimentManager->enrollUser( $this->user, $this->request );
+		$actualEnrollmentConfigs = $experimentManager->getExperimentEnrollments();
+		$this->assertEquals( $experimentManager->getExperimentEnrollments(), $actualEnrollmentConfigs );
+	}
+
+	public function testGetExperiment() {
+		$experimentManager = new ExperimentManager(
+			$this->getMultipleExperimentConfigs(),
+			false,
+			$this->mockMetricsClient );
+		$experimentManager->enrollUser( $this->user, $this->request );
+		$actualExperiment = $experimentManager->getExperiment( 'dessert' );
+
+		$expectedExperiment = new Experiment(
+			$this->mockMetricsClient,
+			[
+				'enrolled' => 'dessert',
+				'assigned' => 'control',
+				'subject_id' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
+				'sampling_unit' => 'mw-user',
+				'coordinator' => 'xLab'
+			]
+		);
+		$this->assertEquals( $expectedExperiment, $actualExperiment );
 	}
 
 	private static function getMultipleExperimentConfigs(): array {

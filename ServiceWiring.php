@@ -30,7 +30,8 @@ return [
 		static function ( MediaWikiServices $services ): ExperimentManagerFactory {
 			return new ExperimentManagerFactory(
 				$services->getMainConfig(),
-				$services->getService( 'MetricsPlatform.ConfigsFetcher' )
+				$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
+				$services->getService( 'MetricsPlatform.Logger' )
 			);
 		},
 ];
