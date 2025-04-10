@@ -79,4 +79,22 @@ Experiment.prototype.submitInteraction = function ( action ) {
 	mw.eventLog.submitInteraction( STREAM_NAME, SCHEMA_ID, action, interactionData );
 };
 
+/**
+ * Gets whether the assigned group for the current user in this experiment is one of the given
+ * groups.
+ *
+ * @example
+ * const e = mw.xLab.getExperiment( 'my-awesome-experiment-1' );
+ *
+ * // Is the current user assigned A or B for the My Awesome Experiment 1 experiment?
+ * if ( e.isAssignedGroup( 'A', 'B' ) {
+ *   // ...
+ * }
+ *
+ * @return {boolean}
+ */
+Experiment.prototype.isAssignedGroup = function ( ...groups ) {
+	return groups.indexOf( this.assignedGroup ) !== -1;
+};
+
 module.exports = Experiment;

@@ -121,3 +121,7 @@ if ( config.MetricsPlatformEnableExperimentOverrides || window.QUnit ) {
 	mw.xLab.clearExperimentOverride = clearExperimentOverride;
 	mw.xLab.clearExperimentOverrides = clearExperimentOverrides;
 }
+
+if ( window.QUnit ) {
+	mw.xLab.Experiment = Experiment;
+}

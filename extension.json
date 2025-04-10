@@ -77,7 +77,8 @@
 		"localBasePath": "tests/qunit",
 		"remoteExtPath": "MetricsPlatform/tests/qunit",
 		"scripts": [
-			"ext.xLab/index.test.js"
+			"ext.xLab/index.test.js",
+			"ext.xLab/Experiment.test.js"
 		],
 		"dependencies": [
 			"ext.xLab"
