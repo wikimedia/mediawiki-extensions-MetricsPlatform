@@ -26,6 +26,11 @@ class ExperimentManagerFactory {
 			'$config',
 			'Required config "MetricsPlatformEnableExperimentOverrides" missing.'
 		);
+		Assert::parameter(
+			$config->has( 'MetricsPlatformEnableExperimentConfigsFetching' ),
+			'$config',
+			'Required config "MetricsPlatformEnableExperimentConfigsFetching" missing.'
+		);
 
 		$this->config = $config;
 		$this->configsFetcher = $configsFetcher;
@@ -39,9 +44,13 @@ class ExperimentManagerFactory {
 	 * @return ExperimentManager
 	 */
 	public function newInstance(): ExperimentManager {
-		$experimentConfigs = $this->config->has( 'MetricsPlatformExperiments' ) ?
-			$this->config->get( 'MetricsPlatformExperiments' ) :
-			$this->configsFetcher->getExperimentConfigs();
+		$experimentConfigs = [];
+
+		if ( $this->config->has( 'MetricsPlatformExperiments' ) ) {
+			$experimentConfigs = $this->config->get( 'MetricsPlatformExperiments' );
+		} elseif ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
+			$experimentConfigs = $this->configsFetcher->getExperimentConfigs();
+		}
 
 		return new ExperimentManager(
 			$experimentConfigs,

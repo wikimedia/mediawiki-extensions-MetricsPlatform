@@ -21,10 +21,6 @@
 		"MediaWiki\\Extension\\MetricsPlatform\\": "includes/"
 	},
 	"config": {
-		"MetricsPlatformEnableExperimentOverrides": {
-			"description": "Enable experiment enrollment overrides via a querystring parameter or a cookie.",
-			"value": false
-		},
 		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
 			"value": "http://localhost:80"
 		},
@@ -36,8 +32,16 @@
 			"description": "Enable merging instrumentation configs with stream configs provided by the EventStreamConfig extension.",
 			"value": false
 		},
+		"MetricsPlatformEnableExperimentOverrides": {
+			"description": "Enable experiment enrollment overrides via a querystring parameter or a cookie.",
+			"value": false
+		},
 		"MetricsPlatformEnableExperiments": {
 			"description": "Enable experiments. If no experiments are defined in $wgMetricsPlatformExperiments, then experiments are fetched from XLab.",
+			"value": false
+		},
+		"MetricsPlatformEnableExperimentConfigsFetching": {
+			"description": "Enable fetching experiment configs from XLab if no experiments are defined in $wgMetricsPlatformExperiments.",
 			"value": false
 		}
 	},
