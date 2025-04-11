@@ -22,55 +22,40 @@ namespace MediaWiki\Extension\MetricsPlatform;
 use MediaWiki\Config\Config;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
-use MediaWiki\MediaWikiServices;
-use MediaWiki\Output\Hook\BeforePageDisplayHook;
-use MediaWiki\Output\OutputPage;
-use MediaWiki\Skin\Skin;
 
 class Hooks implements
-	GetStreamConfigsHook,
-	BeforePageDisplayHook
+	GetStreamConfigsHook
 {
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnableStreamConfigsFetching',
 		'MetricsPlatformEnableStreamConfigsMerging',
-		'MetricsPlatformEnableExperiments',
-		'MetricsPlatformEnableExperimentOverrides',
 	];
 
 	/** @var string */
 	public const PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE = 'analytics/product_metrics/web/base';
 
 	/** @var string */
-	public const PRODUCT_METRICS_STREAM_PREFIX = 'product_metrics.';
-
-	/** @var string */
 	public const PRODUCT_METRICS_DESTINATION_EVENT_SERVICE = 'eventgate-analytics-external';
 
 	private InstrumentConfigsFetcher $configsFetcher;
-	private ExperimentManagerFactory $experimentManagerFactory;
 	private ServiceOptions $options;
 
 	public static function newInstance(
-		InstrumentConfigsFetcher $configsFetcher,
-		ExperimentManagerFactory $experimentManagerFactory,
-		Config $config
+		Config $config,
+		InstrumentConfigsFetcher $configsFetcher
 	): self {
 		return new self(
-			$configsFetcher,
-			$experimentManagerFactory,
-			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $config )
+			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $config ),
+			$configsFetcher
 		);
 	}
 
 	public function __construct(
-		InstrumentConfigsFetcher $configsFetcher,
-		ExperimentManagerFactory $experimentManagerFactory,
-		ServiceOptions $options
+		ServiceOptions $options,
+		InstrumentConfigsFetcher $configsFetcher
 	) {
 		$options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
 		$this->configsFetcher = $configsFetcher;
-		$this->experimentManagerFactory = $experimentManagerFactory;
 		$this->options = $options;
 	}
 
@@ -99,54 +84,5 @@ class Hooks implements
 				];
 			}
 		}
-	}
-
-	/**
-	 * This hook adds a JavaScript configuration variable to the output.
-	 *
-	 * In order to provide experiment enrollment data with bucketing assignments
-	 * for a logged-in user, we take the user's id to deterministically sample and
-	 * bucket the user. Based on the sample rates of active experiments, the user's
-	 * participation in experimentation cohorts is written to a configuration variable
-	 * that will be read by the Metrics Platform client libraries and instrument code
-	 * to send that data along during events submission.
-	 *
-	 * @param OutputPage $out
-	 * @param Skin $skin
-	 */
-	public function onBeforePageDisplay( $out, $skin ): void {
-		// Skip if:
-		//
-		// 1. Experiments are disabled; or
-		// 2. The user is not logged in or is a temporary user.
-		if (
-			!$this->options->get( 'MetricsPlatformEnableExperiments' ) ||
-			!$out->getUser()->isNamed()
-		) {
-			return;
-		}
-		$services = MediaWikiServices::getInstance();
-
-		// Get the user's central ID (for assigning buckets later) and skip if 0.
-		$lookup = $services->getCentralIdLookupFactory()->getLookup();
-		$userId = $lookup->centralIdFromLocalUser( $out->getUser() );
-		if ( $userId === 0 ) {
-			return;
-		}
-
-		$experimentManager = $this->experimentManagerFactory->newInstance();
-
-		// Set the JS config variable for the user's experiment enrollment data.
-		$out->addJsConfigVars(
-			'wgMetricsPlatformUserExperiments',
-			$experimentManager->enrollUser( $out->getUser(), $out->getRequest() )
-		);
-
-		// The `ext.xLab` module contains the JS xLab SDK that is the API the feature code will use to get
-		// the experiments and the corresponding assigned group for the current user
-		//
-		// The `ext.xLab` module also contains some QA-related functions. Those functions are sent to the
-		// browser when we allow experiment enrollment overrides via `MetricsPlatformEnableExperimentOverrides`
-		$out->addModules( 'ext.xLab' );
 	}
 }

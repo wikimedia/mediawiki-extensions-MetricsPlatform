@@ -16,8 +16,8 @@ class InstrumentConfigsFetcher {
 	private const HTTP_TIMEOUT = 1;
 	private const INSTRUMENT = 1;
 	private const EXPERIMENT = 2;
-	public const MPIC_API_INSTRUMENTS_ENDPOINT = "/api/v1/instruments";
-	public const MPIC_API_EXPERIMENTS_ENDPOINT = "/api/v1/experiments";
+	public const XLAB_API_INSTRUMENTS_ENDPOINT = "/api/v1/instruments";
+	public const XLAB_API_EXPERIMENTS_ENDPOINT = "/api/v1/experiments";
 
 	/**
 	 * Name of the main config key(s) for instrument configuration.
@@ -74,7 +74,7 @@ class InstrumentConfigsFetcher {
 
 		// Check for which api endpoint should be queried and set corresponding cache key.
 		$type = $flag ?? self::INSTRUMENT;
-		$endpoint = ( $type > 1 ) ? self::MPIC_API_EXPERIMENTS_ENDPOINT : self::MPIC_API_INSTRUMENTS_ENDPOINT;
+		$endpoint = ( $type > 1 ) ? self::XLAB_API_EXPERIMENTS_ENDPOINT : self::XLAB_API_INSTRUMENTS_ENDPOINT;
 		$cacheKey = ( $type === self::EXPERIMENT ) ? 'ExperimentConfigs' : 'InstrumentConfigs';
 
 		$this->logger->debug(
@@ -119,7 +119,7 @@ class InstrumentConfigsFetcher {
 				request timeout, etc.
 				*/
 				if ( $json === null ) {
-					$this->logger->warning( 'MPIC API is not working.' );
+					$this->logger->warning( 'XLab API is not working.' );
 					return [];
 				}
 				return FormatJson::decode( $json, true );
@@ -142,12 +142,12 @@ class InstrumentConfigsFetcher {
 	}
 
 	/**
-	 * Post-processes the result of successful request to MPIC by:
+	 * Post-processes the result of successful request to XLab by:
 	 *
 	 * 1. Filtering out disabled instruments/experiments (`status=0`)
 	 * 2. Extracting the sample config for the current wiki
 	 *
-	 * @param array $result An array of configs retrieved from MPIC
+	 * @param array $result An array of configs retrieved from XLab
 	 *  TODO: Add a link to the latest response format specification
 	 * @return array
 	 */
@@ -201,7 +201,7 @@ class InstrumentConfigsFetcher {
 	}
 
 	/**
-	 * Increment success/failure of MPIC api requests.
+	 * Increment success/failure of XLab API requests.
 	 *
 	 * @param string $label
 	 */
@@ -212,7 +212,7 @@ class InstrumentConfigsFetcher {
 	}
 
 	/**
-	 * Record length of MPIC api requests.
+	 * Record duration of XLab API requests.
 	 *
 	 * @param float $startTime
 	 */

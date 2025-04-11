@@ -1,9 +1,9 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration\XLab;
 
 use Generator;
-use MediaWiki\Extension\MetricsPlatform\ExperimentManager;
+use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
 use MediaWiki\Request\FauxRequest;
 use MediaWiki\Request\WebRequest;
 use MediaWiki\User\UserIdentity;
@@ -11,7 +11,7 @@ use MediaWiki\User\UserIdentityValue;
 use MediaWikiIntegrationTestCase;
 
 /**
- * @covers \MediaWiki\Extension\MetricsPlatform\ExperimentManager
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager
  */
 class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 

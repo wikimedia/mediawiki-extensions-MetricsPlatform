@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform;
+namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
 use MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation;
 use MediaWiki\Request\WebRequest;

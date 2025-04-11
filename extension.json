@@ -28,7 +28,7 @@
 			"value": "http://localhost:80"
 		},
 		"MetricsPlatformEnableStreamConfigsFetching": {
-			"description": "Enable fetching instrumentation configs from MPIC.",
+			"description": "Enable fetching instrumentation configs from XLab.",
 			"value": false
 		},
 		"MetricsPlatformEnableStreamConfigsMerging": {
@@ -36,7 +36,7 @@
 			"value": false
 		},
 		"MetricsPlatformEnableExperiments": {
-			"description": "Enable experiments. If no experiments are defined in $wgMetricsPlatformExperiments, then experiments are fetched from MPIC.",
+			"description": "Enable experiments. If no experiments are defined in $wgMetricsPlatformExperiments, then experiments are fetched from XLab.",
 			"value": false
 		}
 	},
@@ -44,15 +44,23 @@
 		"main": {
 			"factory": "MediaWiki\\Extension\\MetricsPlatform\\Hooks::newInstance",
 			"services": [
+				"MainConfig",
+				"MetricsPlatform.ConfigsFetcher"
+			]
+		},
+		"XLabMain": {
+			"factory": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\Hooks::newInstance",
+			"services": [
+				"MainConfig",
 				"MetricsPlatform.ConfigsFetcher",
 				"MetricsPlatform.ExperimentManagerFactory",
-				"MainConfig"
+				"CentralIdLookup"
 			]
 		}
 	},
 	"Hooks": {
 		"GetStreamConfigs": "main",
-		"BeforePageDisplay": "main"
+		"BeforePageDisplay": "XLabMain"
 	},
 	"ResourceModules": {
 		"ext.xLab": {

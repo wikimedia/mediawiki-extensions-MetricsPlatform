@@ -2,8 +2,8 @@
 
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\MetricsPlatform\ExperimentManagerFactory;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManagerFactory;
 use MediaWiki\Logger\LoggerFactory;
 use MediaWiki\MediaWikiServices;
 use Psr\Log\LoggerInterface;
@@ -29,8 +29,8 @@ return [
 	'MetricsPlatform.ExperimentManagerFactory' =>
 		static function ( MediaWikiServices $services ): ExperimentManagerFactory {
 			return new ExperimentManagerFactory(
-				$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
-				$services->getMainConfig()
+				$services->getMainConfig(),
+				$services->getService( 'MetricsPlatform.ConfigsFetcher' )
 			);
 		},
 ];
