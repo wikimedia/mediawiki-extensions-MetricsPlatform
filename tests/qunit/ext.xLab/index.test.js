@@ -10,7 +10,6 @@ QUnit.module( 'ext.xLab/Experiment - User is not logged-in or MetricsPlatformEna
 QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( assert ) => {
 	const experiment = mw.xLab.getExperiment( 'an_experiment_name' );
 
-	assert.strictEqual( experiment.isEnrolled(), false );
 	assert.strictEqual( experiment.getAssignedGroup(), null );
 } );
 
@@ -26,7 +25,8 @@ QUnit.module( 'ext.xLab/Experiment - User is logged-in and there are no experime
 			/* eslint-disable-next-line camelcase */
 			subject_ids: [],
 			/* eslint-disable-next-line camelcase */
-			sampling_units: []
+			sampling_units: [],
+			overrides: []
 		} );
 	}
 } );
@@ -34,7 +34,6 @@ QUnit.module( 'ext.xLab/Experiment - User is logged-in and there are no experime
 QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( assert ) => {
 	const experiment = mw.xLab.getExperiment( 'an_experiment_name' );
 
-	assert.strictEqual( experiment.isEnrolled(), false );
 	assert.strictEqual( experiment.getAssignedGroup(), null );
 } );
 
@@ -53,7 +52,8 @@ QUnit.module( 'ext.xLab/Experiment - User is logged-in, there are experiments bu
 			/* eslint-disable-next-line camelcase */
 			subject_ids: [],
 			/* eslint-disable-next-line camelcase */
-			sampling_units: []
+			sampling_units: [],
+			overrides: []
 		} );
 	}
 } );
@@ -61,14 +61,12 @@ QUnit.module( 'ext.xLab/Experiment - User is logged-in, there are experiments bu
 QUnit.test( 'getExperiment() - The experiment doesn\'t exist', ( assert ) => {
 	const experiment = mw.xLab.getExperiment( 'an_experiment_that_doesnt_exist' );
 
-	assert.strictEqual( experiment.isEnrolled(), false );
 	assert.strictEqual( experiment.getAssignedGroup(), null );
 } );
 
 QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( assert ) => {
 	const experiment = mw.xLab.getExperiment( 'one_experiment' );
 
-	assert.strictEqual( experiment.isEnrolled(), false );
 	assert.strictEqual( experiment.getAssignedGroup(), null );
 } );
 
@@ -99,7 +97,8 @@ QUnit.module( 'ext.xLab/Experiment - User is logged-in and enrolled in some expe
 				'fruit',
 				'dessert',
 				'lunch'
-			]
+			],
+			overrides: []
 		} );
 	}
 } );
@@ -107,21 +106,18 @@ QUnit.module( 'ext.xLab/Experiment - User is logged-in and enrolled in some expe
 QUnit.test( 'getExperiment() - The experiment doesn\'t exist', ( assert ) => {
 	const experiment = mw.xLab.getExperiment( 'other_experiment' );
 
-	assert.strictEqual( experiment.isEnrolled(), false );
 	assert.strictEqual( experiment.getAssignedGroup(), null );
 } );
 
 QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( assert ) => {
 	const experiment = mw.xLab.getExperiment( 'lunch' );
 
-	assert.strictEqual( experiment.isEnrolled(), false );
 	assert.strictEqual( experiment.getAssignedGroup(), null );
 } );
 
 QUnit.test( 'getExperiment() - The user is enrolled in this experiment', ( assert ) => {
 	const experiment = mw.xLab.getExperiment( 'fruit' );
 
-	assert.strictEqual( experiment.isEnrolled(), true );
 	assert.strictEqual( experiment.getAssignedGroup(), 'tropical' );
 } );
 

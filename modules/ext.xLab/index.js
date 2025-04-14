@@ -33,15 +33,25 @@ const config = require( './config.json' );
 function getExperiment( experimentName ) {
 	const userExperiments = c( 'wgMetricsPlatformUserExperiments' );
 	let assignedGroup = null;
+	let subjectId;
+	let samplingUnit;
+	let coordinator;
 
 	if (
-		( userExperiments !== null && userExperiments !== undefined ) &&
-		( userExperiments.assigned && userExperiments.assigned[ experimentName ] )
+		userExperiments &&
+		userExperiments.assigned[ experimentName ]
 	) {
 		assignedGroup = userExperiments.assigned[ experimentName ];
+		/* eslint-disable-next-line camelcase */
+		subjectId = userExperiments.subject_ids[ experimentName ];
+		/* eslint-disable-next-line camelcase */
+		samplingUnit = userExperiments.sampling_units[ experimentName ];
+		coordinator = userExperiments.overrides.indexOf( experimentName ) !== -1 ? 'forced' : 'xLab';
 	}
 
-	return new Experiment( experimentName, assignedGroup );
+	// TODO Add an informational message in the case the experiment doesn't exist
+
+	return new Experiment( experimentName, assignedGroup, subjectId, samplingUnit, coordinator );
 }
 
 function setCookieAndReload( value ) {

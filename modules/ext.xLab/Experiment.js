@@ -12,8 +12,6 @@ const STREAM_NAME = 'product_metrics.web_base';
  * // An experiment can be instantiated via `mw.xLab.getExperiment()`
  * function:
  * const experiment = mw.xLab.getExperiment( 'my_experiment' );
- * // Developers can check if the current user is enrolled in that experiment
- * experiment.isEnrolled();
  * // Developers can get the assigned group
  * experiment.getAssignedGroup();
  * // The experiment can submit a related event
@@ -25,20 +23,28 @@ const STREAM_NAME = 'product_metrics.web_base';
  *
  * @param {string} name The name of this experiment
  * @param {string} assignedGroup The assigned group for this experiment
+ * @param {string} subjectId The subject id for this experiment
+ * @param {string} samplingUnit The sampling unit for this experiment
+ * @param {string} coordinator The coordinator that has set the enrollment for this experiment: `xLab`
+ * if the enrollment is not overriden and `forced` in the case it's
  */
-function Experiment( name, assignedGroup ) {
+function Experiment( name, assignedGroup, subjectId, samplingUnit, coordinator ) {
 	this.name = name;
 	this.assignedGroup = assignedGroup;
+	this.subjectId = subjectId;
+	this.samplingUnit = samplingUnit;
+	this.coordinator = coordinator;
 }
 
 /**
  * Checks whether or not the user is enrolled in this experiment
  *
+ * @ignore
  * @return {boolean} true is the current user is enrolled in this experiment. false otherwise
  */
-Experiment.prototype.isEnrolled = function () {
+function isEnrolled() {
 	return this.assignedGroup !== null;
-};
+}
 
 /**
  * Returns the assigned group for this experiment for the current user
@@ -52,27 +58,30 @@ Experiment.prototype.getAssignedGroup = function () {
 
 /**
  * Submits an event related to this experiment
- * `instrument_name` and `experiment.enrolled` properties are filled
- * automatically by this function as interactionData. It's the way client
- * libraries can know that the event is related to this experiment
+ * `instrument_name` and the entire `experiment` fragment will be filled
+ * automatically by this function as interactionData
  *
  * @param {string} action The action related to the submitted event
  */
-Experiment.prototype.submitInteraction = function ( action ) {
+Experiment.prototype.send = function ( action ) {
 	// If the user is not enrolled in this experiment, it won't be able
 	// to send events
-	if ( this.assignedGroup === null ) {
+	if ( !isEnrolled.call( this ) ) {
 		return;
 	}
 
 	const interactionData = {
 		/* eslint-disable-next-line camelcase */
 		instrument_name: this.name,
-		// Puts the name of the experiment here for client libraries to know
-		// that the event is related to it
+		// Fills all the details related to the experiment enrollment
 		experiment: {
 			enrolled: this.name,
-			coordinator: 'xLab'
+			assigned: this.assignedGroup,
+			/* eslint-disable-next-line camelcase */
+			subject_id: this.subjectId,
+			/* eslint-disable-next-line camelcase */
+			sampling_unit: this.samplingUnit,
+			coordinator: this.coordinator
 		}
 	};
 
