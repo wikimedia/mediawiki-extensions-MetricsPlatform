@@ -43,14 +43,19 @@ function getExperiment( experimentName ) {
 	) {
 		assignedGroup = userExperiments.assigned[ experimentName ];
 		/* eslint-disable-next-line camelcase */
-		subjectId = userExperiments.subject_ids[ experimentName ];
-		/* eslint-disable-next-line camelcase */
 		samplingUnit = userExperiments.sampling_units[ experimentName ];
+		/* eslint-disable-next-line camelcase */
+		subjectId = samplingUnit === 'mw-user' ?
+			userExperiments.subject_ids[ experimentName ] :
+			'awaiting';
 		coordinator = userExperiments.overrides.indexOf( experimentName ) !== -1 ? 'forced' : 'xLab';
+	} else {
+		mw.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
+			'Is the experiment configured and running?' );
 	}
 
-	// TODO Add an informational message in the case the experiment doesn't exist
-
+	// When the experiment doesn't exist, only `experimentName` will be set properly. The rest of
+	// its attributes will be `null`
 	return new Experiment( experimentName, assignedGroup, subjectId, samplingUnit, coordinator );
 }
 
