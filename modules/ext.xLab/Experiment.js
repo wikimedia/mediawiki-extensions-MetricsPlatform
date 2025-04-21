@@ -58,21 +58,20 @@ Experiment.prototype.getAssignedGroup = function () {
 
 /**
  * Submits an event related to this experiment
- * `instrument_name` and the entire `experiment` fragment will be filled
- * automatically by this function as interactionData
+ * The entire `experiment` fragment will be filled automatically
+ * and, optionally, additional data can be added as interaction data
  *
  * @param {string} action The action related to the submitted event
+ * @param {Object} interactionData Additional data
  */
-Experiment.prototype.send = function ( action ) {
+Experiment.prototype.send = function ( action, interactionData ) {
 	// If the user is not enrolled in this experiment, it won't be able
 	// to send events
 	if ( !isEnrolled.call( this ) ) {
 		return;
 	}
 
-	const interactionData = {
-		/* eslint-disable-next-line camelcase */
-		instrument_name: this.name,
+	const enrollmentDetails = {
 		// Fills all the details related to the experiment enrollment
 		experiment: {
 			enrolled: this.name,
@@ -84,6 +83,7 @@ Experiment.prototype.send = function ( action ) {
 			coordinator: this.coordinator
 		}
 	};
+	interactionData = Object.assign( {}, interactionData, enrollmentDetails );
 
 	mw.eventLog.submitInteraction( STREAM_NAME, SCHEMA_ID, action, interactionData );
 };
