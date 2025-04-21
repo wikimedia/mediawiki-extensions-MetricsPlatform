@@ -25,7 +25,7 @@ use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\Hook\BeforePageDisplayHook;
 use MediaWiki\Output\OutputPage;
-use Skin;
+use MediaWiki\Skin\Skin;
 
 class Hooks implements
 	GetStreamConfigsHook,
