@@ -76,9 +76,9 @@ Experiment.prototype.send = function ( action, interactionData ) {
 		experiment: {
 			enrolled: this.name,
 			assigned: this.assignedGroup,
-			/* eslint-disable-next-line camelcase */
+
 			subject_id: this.subjectId,
-			/* eslint-disable-next-line camelcase */
+
 			sampling_unit: this.samplingUnit,
 			coordinator: this.coordinator
 		}
@@ -92,6 +92,7 @@ Experiment.prototype.send = function ( action, interactionData ) {
  * Gets whether the assigned group for the current user in this experiment is one of the given
  * groups.
  *
+ * @param {...any} groups
  * @example
  * const e = mw.xLab.getExperiment( 'my-awesome-experiment-1' );
  *

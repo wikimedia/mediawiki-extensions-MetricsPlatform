@@ -13,7 +13,7 @@ const Experiment = require( './Experiment.js' );
 /**
  * @type {Config}
  * @ignore
-*/
+ */
 const config = require( './config.json' );
 
 /**
@@ -42,9 +42,9 @@ function getExperiment( experimentName ) {
 		userExperiments.assigned[ experimentName ]
 	) {
 		assignedGroup = userExperiments.assigned[ experimentName ];
-		/* eslint-disable-next-line camelcase */
+
 		samplingUnit = userExperiments.sampling_units[ experimentName ];
-		/* eslint-disable-next-line camelcase */
+
 		subjectId = samplingUnit === 'mw-user' ?
 			userExperiments.subject_ids[ experimentName ] :
 			'awaiting';

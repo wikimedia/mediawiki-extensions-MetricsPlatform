@@ -18,13 +18,13 @@ QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( a
 QUnit.module( 'ext.xLab/Experiment - User is logged-in and there are no experiments', {
 	beforeEach: function () {
 		mw.config.set( 'wgMetricsPlatformUserExperiments', {
-			/* eslint-disable-next-line camelcase */
+
 			active_experiments: [],
 			enrolled: [],
 			assigned: [],
-			/* eslint-disable-next-line camelcase */
+
 			subject_ids: [],
-			/* eslint-disable-next-line camelcase */
+
 			sampling_units: [],
 			overrides: []
 		} );
@@ -42,16 +42,16 @@ QUnit.test( 'getExperiment() - The user is not enrolled in this experiment', ( a
 QUnit.module( 'ext.xLab/Experiment - User is logged-in, there are experiments but not enrollments', {
 	beforeEach: function () {
 		mw.config.set( 'wgMetricsPlatformUserExperiments', {
-			/* eslint-disable-next-line camelcase */
+
 			active_experiments: [
 				'one_experiment',
 				'other_experiment'
 			],
 			enrolled: [],
 			assigned: [],
-			/* eslint-disable-next-line camelcase */
+
 			subject_ids: [],
-			/* eslint-disable-next-line camelcase */
+
 			sampling_units: [],
 			overrides: []
 		} );
@@ -82,17 +82,17 @@ QUnit.module( 'ext.xLab/Experiment - User is logged-in and enrolled in some expe
 				fruit: 'tropical',
 				dessert: 'ice-cream'
 			},
-			/* eslint-disable-next-line camelcase */
+
 			subject_ids: {
 				fruit: '2def9a8f9d8c4f0296268a1c3d2e7fba90298e704070d946536166c832d05652',
 				dessert: '788a1970cc9b665222de25cc1a79da7ee1fcaf69b674caba188233ad995ba3d4'
 			},
-			/* eslint-disable-next-line camelcase */
+
 			sampling_units: {
 				fruit: 'mw-user',
 				dessert: 'mw-user'
 			},
-			/* eslint-disable-next-line camelcase */
+
 			active_experiments: [
 				'fruit',
 				'dessert',

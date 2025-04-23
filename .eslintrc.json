@@ -5,6 +5,17 @@
 		"wikimedia/jquery",
 		"wikimedia/mediawiki"
 	],
+	"rules": {
+		"camelcase": [
+			"error",
+			{
+				"properties": "never"
+			}
+		]
+	},
+	"ignorePatterns": [
+		"docs"
+	],
 	"env": {
 		"commonjs": true
 	}
