@@ -7,8 +7,8 @@ use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\Output\Hook\BeforePageDisplayHook;
 use MediaWiki\Output\OutputPage;
+use MediaWiki\Skin\Skin;
 use MediaWiki\User\CentralId\CentralIdLookup;
-use Skin;
 
 class Hooks implements BeforePageDisplayHook {
 	public const CONSTRUCTOR_OPTIONS = [
