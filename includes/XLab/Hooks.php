@@ -5,47 +5,46 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 use MediaWiki\Config\Config;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use MediaWiki\MediaWikiServices;
 use MediaWiki\Output\Hook\BeforePageDisplayHook;
 use MediaWiki\Output\OutputPage;
 use MediaWiki\Skin\Skin;
-use MediaWiki\User\CentralId\CentralIdLookup;
+use Psr\Log\LoggerInterface;
 
 class Hooks implements BeforePageDisplayHook {
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnableExperiments',
 		'MetricsPlatformEnableExperimentOverrides',
+		'MetricsPlatformEnableExperimentConfigsFetching',
 	];
 
 	private InstrumentConfigsFetcher $configsFetcher;
 	private ExperimentManagerFactory $experimentManagerFactory;
-	private CentralIdLookup $centralIdLookup;
 	private ServiceOptions $options;
+	private LoggerInterface $logger;
 
 	public static function newInstance(
 		Config $config,
 		InstrumentConfigsFetcher $configsFetcher,
-		ExperimentManagerFactory $experimentManagerFactory,
-		CentralIdLookup $centralIdLookup
+		ExperimentManagerFactory $experimentManagerFactory
 	): self {
 		return new self(
 			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $config ),
 			$configsFetcher,
-			$experimentManagerFactory,
-			$centralIdLookup
+			$experimentManagerFactory
 		);
 	}
 
 	public function __construct(
 		ServiceOptions $options,
 		InstrumentConfigsFetcher $configsFetcher,
-		ExperimentManagerFactory $experimentManagerFactory,
-		CentralIdLookup $centralIdLookup
+		ExperimentManagerFactory $experimentManagerFactory
 	) {
 		$options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
 		$this->options = $options;
 		$this->configsFetcher = $configsFetcher;
 		$this->experimentManagerFactory = $experimentManagerFactory;
-		$this->centralIdLookup = $centralIdLookup;
+		$this->logger = MediaWikiServices::getInstance()->getService( 'MetricsPlatform.Logger' );
 	}
 
 	/**
@@ -64,29 +63,24 @@ class Hooks implements BeforePageDisplayHook {
 	public function onBeforePageDisplay( $out, $skin ): void {
 		// Skip if:
 		//
-		// 1. Experiments are disabled; or
-		// 2. The user is not logged in or is a temporary user.
-		if (
-			!$this->options->get( 'MetricsPlatformEnableExperiments' ) ||
-			!$out->getUser()->isNamed()
-		) {
-			return;
-		}
-
-		$userId = $this->centralIdLookup->centralIdFromLocalUser( $out->getUser() );
-		if ( $userId === 0 ) {
+		// 1. Experiments are disabled
+		if ( !$this->options->get( 'MetricsPlatformEnableExperiments' ) ) {
 			return;
 		}
 
 		$experimentManager = $this->experimentManagerFactory->newInstance();
 
-		// Enroll the current user into active experiments.
-		// Sets the experiment config in PHP for the user's experiment enrollment data.
-		$experimentManager->enrollUser( $userId, $out->getRequest() );
-		$enrollments = $experimentManager->getExperimentEnrollments();
+		// Set experiment enrollments for everyone (parsing the `X-Experiment-Enrollments` header)
+		// and logged-in experiments (running the enrollment algorithm, `mediawiki` is the authority for
+		// these experiments)
+		$experimentManager->enrollUser( $out->getUser(), $out->getRequest() );
+		$experimentEnrollments = $experimentManager->getExperimentEnrollments();
 
 		// Set the JS config variable for the user's experiment enrollment data.
-		$out->addJsConfigVars( 'wgMetricsPlatformUserExperiments', $enrollments );
+		$out->addJsConfigVars(
+			'wgMetricsPlatformUserExperiments',
+			$experimentEnrollments
+		);
 
 		// The `ext.xLab` module contains the JS xLab SDK that is the API the feature code will use to get
 		// the experiments and the corresponding assigned group for the current user
@@ -97,6 +91,6 @@ class Hooks implements BeforePageDisplayHook {
 
 		// T393101: Add CSS classes representing experiment enrollment and assignment automatically so that experiment
 		// implementers don't have to do this themselves.
-		$out->addBodyClasses( EnrollmentCssClassSerializer::serialize( $enrollments ) );
+		$out->addBodyClasses( EnrollmentCssClassSerializer::serialize( $experimentEnrollments ) );
 	}
 }

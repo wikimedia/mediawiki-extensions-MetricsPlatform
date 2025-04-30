@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 use MediaWiki\Config\Config;
 use MediaWiki\Extension\EventLogging\EventLogging;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use MediaWiki\User\CentralId\CentralIdLookup;
 use Psr\Log\LoggerInterface;
 use Wikimedia\Assert\Assert;
 
@@ -14,11 +15,13 @@ use Wikimedia\Assert\Assert;
 class ExperimentManagerFactory {
 	private InstrumentConfigsFetcher $configsFetcher;
 	private Config $config;
+	private CentralIdLookup $centralIdLookup;
 	private LoggerInterface $logger;
 
 	public function __construct(
 		Config $config,
 		InstrumentConfigsFetcher $configsFetcher,
+		CentralIdLookup $centralIdLookup,
 		LoggerInterface $logger
 	) {
 		Assert::parameter(
@@ -34,7 +37,42 @@ class ExperimentManagerFactory {
 
 		$this->config = $config;
 		$this->configsFetcher = $configsFetcher;
+		$this->centralIdLookup = $centralIdLookup;
 		$this->logger = $logger;
+	}
+
+	/**
+	 * Returns the active experiments where mediawiki is the authority. They are defined locally
+	 * for testing purporses via `$wgMetricsPlatformExperiments` in `LocalSettings.php` or in xLab
+	 *
+	 * @return array
+	 */
+	private function getMwUserExperimentConfigs(): array {
+		$experimentConfigs = [];
+
+		if ( $this->config->has( 'MetricsPlatformExperiments' ) ) {
+			$experimentConfigs = $this->config->get( 'MetricsPlatformExperiments' );
+		} elseif ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
+			$experimentConfigs = $this->configsFetcher->getExperimentConfigs();
+		}
+
+		return $experimentConfigs;
+	}
+
+	/**
+	 * Creates and returns a new instance of ExperimentManager
+	 *
+	 * @param array $experimentConfigs
+	 * @return ExperimentManager
+	 */
+	private function getExperimentManager( array $experimentConfigs ): ExperimentManager {
+		return new ExperimentManager(
+			$experimentConfigs,
+			$this->config->get( 'MetricsPlatformEnableExperimentOverrides' ),
+			EventLogging::getMetricsPlatformClient(),
+			$this->centralIdLookup,
+			$this->logger
+		);
 	}
 
 	/**
@@ -44,19 +82,8 @@ class ExperimentManagerFactory {
 	 * @return ExperimentManager
 	 */
 	public function newInstance(): ExperimentManager {
-		$experimentConfigs = [];
+		$experimentConfigs = $this->getMwUserExperimentConfigs();
 
-		if ( $this->config->has( 'MetricsPlatformExperiments' ) ) {
-			$experimentConfigs = $this->config->get( 'MetricsPlatformExperiments' );
-		} elseif ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
-			$experimentConfigs = $this->configsFetcher->getExperimentConfigs();
-		}
-
-		return new ExperimentManager(
-			$experimentConfigs,
-			$this->config->get( 'MetricsPlatformEnableExperimentOverrides' ),
-			EventLogging::getMetricsPlatformClient(),
-			$this->logger
-		);
+		return $this->getExperimentManager( $experimentConfigs );
 	}
 }

@@ -4,6 +4,8 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
 use MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation;
 use MediaWiki\Request\WebRequest;
+use MediaWiki\User\CentralId\CentralIdLookup;
+use MediaWiki\User\User;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -15,6 +17,7 @@ class ExperimentManager implements LoggerAwareInterface {
 	private array $experimentEnrollments;
 	private MetricsClient $metricsClient;
 	private bool $enableOverrides;
+	private CentralIdLookup $centralIdLookup;
 	private LoggerInterface $logger;
 
 	/**
@@ -29,19 +32,24 @@ class ExperimentManager implements LoggerAwareInterface {
 	 * @param array $experimentConfigs
 	 * @param bool $enableOverrides
 	 * @param MetricsClient $metricsClient
+	 * @param CentralIdLookup $centralIdLookup
 	 * @param ?LoggerInterface $logger
 	 */
 	public function __construct(
 		array $experimentConfigs,
 		bool $enableOverrides,
 		MetricsClient $metricsClient,
+		CentralIdLookup $centralIdLookup,
 		?LoggerInterface $logger = null
 	) {
 		$this->userSplitterInstrumentation = new UserSplitterInstrumentation();
 		$this->initialize( $experimentConfigs );
 		$this->enableOverrides = $enableOverrides;
 		$this->metricsClient = $metricsClient;
+		$this->centralIdLookup = $centralIdLookup;
 		$this->logger = $logger ?? new NullLogger();
+
+		$this->experimentEnrollments = [];
 	}
 
 	private function initialize( array $experimentConfigs ): void {
@@ -64,8 +72,25 @@ class ExperimentManager implements LoggerAwareInterface {
 		$this->experiments = $experiments;
 	}
 
-	private function setExperimentEnrollments( array $experimentEnrollments ): void {
-		$this->experimentEnrollments = $experimentEnrollments;
+	/**
+	 * Initializes experiment enrollments (used to do it with the experiments found in
+	 * the `X-Experiment-Enrollments` header)
+	 */
+	public function setExperimentEnrollments( array $experimentEnrollments ): void {
+		$this->experimentEnrollments = [
+			'active_experiments' => [],
+			'enrolled' => [],
+			'assigned' => [],
+			'subject_ids' => [],
+			'sampling_units' => [],
+			'overrides' => [],
+		];
+
+		$experimentNames = array_keys( $experimentEnrollments );
+		$this->experimentEnrollments['enrolled'] = $experimentNames;
+		$this->experimentEnrollments['assigned'] = $experimentEnrollments;
+		$this->experimentEnrollments['active_experiments'] = $experimentNames;
+		$this->experimentEnrollments['sampling_units'] = array_fill_keys( $experimentNames, 'edge-unique' );
 	}
 
 	public function getExperimentEnrollments(): array {
@@ -168,7 +193,7 @@ class ExperimentManager implements LoggerAwareInterface {
 	 *     "foo" => "2b1138ed5e31c7f7093c211714c4b751f8b9ca863e3dc72ac53a28bef6c08e0d"
 	 *   ],
 	 *   "sampling_units" => [
-	 *     "foo" =>  "mw-user"
+	 *     "foo" => "mw-user"
 	 *   ],
 	 *   "overrides" => [
 	 *     "foo",
@@ -189,10 +214,10 @@ class ExperimentManager implements LoggerAwareInterface {
 	 * * `dark-mode-ab-test:dark-mode`
 	 * * `sticky-header-ab-test:control`
 	 *
-	 * @param int $userId
+	 * @param User $user
 	 * @param WebRequest $request
 	 */
-	public function enrollUser( int $userId, WebRequest $request ): void {
+	public function enrollUser( User $user, WebRequest $request ): void {
 		$result = [
 			'active_experiments' => [],
 			'enrolled' => [],
@@ -201,6 +226,21 @@ class ExperimentManager implements LoggerAwareInterface {
 			'sampling_units' => [],
 			'overrides' => []
 		];
+
+		// Parse 'X-Experiment-Enrollments' header in search of everyone experiments enrollments
+		$experimentEnrollmentsHeader = $request->getHeader( 'X-Experiment-Enrollments' );
+		$everyoneEnrollments = $this->parseExperimentEnrollmentsHeader( $experimentEnrollmentsHeader );
+		$this->setExperimentEnrollments( $everyoneEnrollments );
+
+		// If the user is not logged in, the Experiment Manager won't run the experiment enrollment for
+		// logged-in experiments
+		if ( !$user->isRegistered() ) {
+			return;
+		}
+		$userId = $this->centralIdLookup->centralIdFromLocalUser( $user );
+		if ( $userId === 0 ) {
+			return;
+		}
 
 		// Parse forceVariant query parameter as an override for bucket assignment.
 		$overrides = $this->getEnrollmentOverrides( $request );
@@ -242,10 +282,49 @@ class ExperimentManager implements LoggerAwareInterface {
 				$result['sampling_units'][$experimentName] = 'mw-user';
 			}
 
-			// Anyway the experiment will be added to the `active_experiments` property
+			// Anyway, the experiment will be added to the `active_experiments` property
 			$result['active_experiments'][] = $experimentName;
 		}
-		$this->setExperimentEnrollments( $result );
+
+		// Merges enrollment results with the ones there might be already (everyone experiments
+		// parsed from the `X-Experiment-Enrollments` header)
+		$this->experimentEnrollments = array_merge_recursive( $this->experimentEnrollments, $result );
+	}
+
+	/**
+	 * Parses 'X-Experiment-Enrollments' headers in search of everyone experiments enrollments
+	 * If the header is malformed somehow (even partially), an empty array will be returned and an error message logged
+	 *
+	 * @param string $experimentEnrollmentsHeader The value of the `X-Experiment-Enrollments` header
+	 * @return array Experiment enrollment information parsed from the header as a key-value pair
+	 * as $experimentName:$assignedGroup.
+	 */
+	private function parseExperimentEnrollmentsHeader( $experimentEnrollmentsHeader ): array {
+		$everyoneEnrollments = [];
+
+		if ( $experimentEnrollmentsHeader ) {
+			$experimentEnrollments = explode( ';', $experimentEnrollmentsHeader );
+			if ( count( $experimentEnrollments ) > 0 ) {
+				foreach ( $experimentEnrollments as $enrollment ) {
+					$assigned = explode( '=', $enrollment );
+					if ( count( $assigned ) == 2 ) {
+						$everyoneEnrollments[$assigned[0]] = $assigned[1];
+					} else {
+						$everyoneEnrollments = [];
+						$this->logger->error(
+							'X-Experiment-Enrollments could not be parsed properly. The header is malformed'
+						);
+						break;
+					}
+				}
+			} else {
+				$this->logger->error(
+					'X-Experiment-Enrollments could not be parsed properly. The header is malformed'
+				);
+			}
+		}
+
+		return $everyoneEnrollments;
 	}
 
 	/**

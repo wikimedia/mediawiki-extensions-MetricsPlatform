@@ -31,6 +31,7 @@ return [
 			return new ExperimentManagerFactory(
 				$services->getMainConfig(),
 				$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
+				$services->getService( 'CentralIdLookup' ),
 				$services->getService( 'MetricsPlatform.Logger' )
 			);
 		},

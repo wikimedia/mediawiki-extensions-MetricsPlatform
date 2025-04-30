@@ -7,6 +7,8 @@ use MediaWiki\Extension\MetricsPlatform\XLab\Experiment;
 use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
 use MediaWiki\Request\FauxRequest;
 use MediaWiki\Request\WebRequest;
+use MediaWiki\User\CentralId\CentralIdLookup;
+use MediaWiki\User\User;
 use MediaWikiIntegrationTestCase;
 use Wikimedia\MetricsPlatform\MetricsClient;
 
@@ -19,39 +21,76 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		'active_experiments' => [],
 		'assigned' => [],
 		'enrolled' => [],
-		'overrides' => [],
-		'sampling_units' => [],
 		'subject_ids' => [],
+		'sampling_units' => [],
+		'overrides' => [],
 	];
 
-	private int $userId;
+	private User $user;
 	private WebRequest $request;
 	private MetricsClient $mockMetricsClient;
+	private CentralIdLookup $centralIdLookup;
 
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->userId = 123;
 		$this->request = new FauxRequest();
 		$this->mockMetricsClient = $this->createMock( MetricsClient::class );
+
+		$this->user = new User();
+		$this->user->setName( 'TestUser' );
+		$this->user->setId( 123 );
+
+		$this->centralIdLookup = $this->createMock( CentralIdLookup::class );
+		$this->centralIdLookup
+			->method( 'centralIdFromLocalUser' )
+			->with( $this->user )
+			->willReturn( 321 );
+
+		$this->setService( 'CentralIdLookup', $this->centralIdLookup );
 	}
 
 	/**
 	 * @dataProvider provideGetUserExperimentsConfig
 	 */
-	public function testEnrollUser(
+	public function testEnrollUserLoggedInExperiments(
 		array $expected,
 		array $experiments,
 		string $message = ''
 	) {
-		$experiment = new ExperimentManager(
+		$experimentManager = new ExperimentManager(
 			$experiments,
 			false,
-			$this->mockMetricsClient
+			$this->mockMetricsClient,
+			$this->centralIdLookup
 		);
-		$experiment->enrollUser( $this->userId, $this->request );
 
-		$actual = $experiment->getExperimentEnrollments();
+		$experimentManager->enrollUser( $this->user, $this->request );
+
+		$actual = $experimentManager->getExperimentEnrollments();
+
+		$this->assertArrayEquals( $expected, $actual, false, false, $message );
+	}
+
+	/**
+	 * @dataProvider provideGetLoggedInAndEveryoneExperiments
+	 */
+	public function testEnrollUserLoggedInAndEveryoneExperiments(
+		array $expected,
+		array $experiments,
+		string $experimentEnrollmentsHeader,
+		string $message = ''
+	) {
+		$experimentManager = new ExperimentManager(
+			$experiments,
+			false,
+			$this->mockMetricsClient,
+			$this->centralIdLookup
+		);
+		$this->request->setHeader( 'X-Experiment-Enrollments', $experimentEnrollmentsHeader );
+		$experimentManager->enrollUser( $this->user, $this->request );
+
+		$actual = $experimentManager->getExperimentEnrollments();
 
 		$this->assertArrayEquals( $expected, $actual, false, false, $message );
 	}
@@ -85,7 +124,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 					'fruit' => 'mango'
 				],
 				'subject_ids' => [
-					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4'
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b'
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user'
@@ -142,28 +181,204 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'enrolled' => [
 					'fruit',
-					'dinner',
 					'dessert'
 				],
 				'assigned' => [
 					'fruit' => 'tropical',
-					'dessert' => 'control',
-					'dinner' => 'get-takeout'
+					'dessert' => 'gelato-scoops',
 				],
 				'subject_ids' => [
-					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513',
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b',
+					'dessert' => 'bc65059b1450a53402144d102c49cbc2ca6ca4a0d4a9e558fdf4da7969af8901',
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
 					'dessert' => 'mw-user',
-					'dinner' => 'mw-user',
 				],
 				'overrides' => [],
 			],
 			static::getMultipleExperimentConfigs(),
 			'User is enrolled in multiple experiments',
+		];
+	}
+
+	public static function provideGetLoggedInAndEveryoneExperiments(): Generator {
+		yield [
+			[
+				'active_experiments' => [
+					'experiment_1',
+					'experiment_2'
+				],
+				'enrolled' => [
+					'experiment_1',
+					'experiment_2'
+				],
+				'assigned' => [
+					'experiment_1' => 'group_1',
+					'experiment_2' => 'group_2'
+				],
+				'subject_ids' => [],
+				'sampling_units' => [
+					'experiment_1' => 'edge-unique',
+					'experiment_2' => 'edge-unique'
+				],
+				'overrides' => [],
+			],
+			[],
+			'experiment_1=group_1;experiment_2=group_2',
+		];
+
+		yield [
+			[
+				'active_experiments' => [
+					'experiment_1',
+					'experiment_2'
+				],
+				'enrolled' => [
+					'experiment_1',
+					'experiment_2'
+				],
+				'assigned' => [
+					'experiment_1' => 'group_1',
+					'experiment_2' => 'group_2'
+				],
+				'subject_ids' => [],
+				'sampling_units' => [
+					'experiment_1' => 'edge-unique',
+					'experiment_2' => 'edge-unique'
+				],
+				'overrides' => [],
+			],
+			[
+				[
+					'slug' => 'dog-breeds',
+					'sample' => [
+						'rate' => 0.0
+					],
+					'groups' => [],
+				],
+			],
+			'experiment_1=group_1;experiment_2=group_2',
+			'Experiment with a sample rate of 0.0 should be filtered.'
+		];
+
+		yield [
+			[
+				'active_experiments' => [
+					'experiment_1',
+					'experiment_2',
+					'fruit'
+				],
+				'enrolled' => [
+					'experiment_1',
+					'experiment_2',
+					'fruit'
+				],
+				'assigned' => [
+					'experiment_1' => 'group_1',
+					'experiment_2' => 'group_2',
+					'fruit' => 'mango',
+				],
+				'subject_ids' => [
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b'
+				],
+				'sampling_units' => [
+					'experiment_1' => 'edge-unique',
+					'experiment_2' => 'edge-unique',
+					'fruit' => 'mw-user',
+				],
+				'overrides' => [],
+			],
+			[
+				[
+					'slug' => 'fruit',
+					'groups' => [
+						'mango',
+						'control'
+					],
+					'sample' => [
+						'rate' => 1.0
+					],
+				],
+			],
+			'experiment_1=group_1;experiment_2=group_2',
+			'User is enrolled in three experiments'
+		];
+
+		yield [
+			[
+				'active_experiments' => [
+					'experiment_1',
+					'experiment_2',
+					'dinner',
+				],
+				'enrolled' => [
+					'experiment_1',
+					'experiment_2'
+				],
+				'assigned' => [
+					'experiment_1' => 'group_1',
+					'experiment_2' => 'group_2'
+				],
+				'subject_ids' => [],
+				'sampling_units' => [
+					'experiment_1' => 'edge-unique',
+					'experiment_2' => 'edge-unique'
+				],
+				'overrides' => [],
+			],
+			[
+				[
+					'slug' => 'dinner',
+					'groups' => [
+						'control',
+						'soap'
+					],
+					'sample' => [
+						'rate' => '0.25'
+					]
+				],
+			],
+			'experiment_1=group_1;experiment_2=group_2',
+			"User isn't enrolled in the logged in experiment but they are in the everyone experiments",
+		];
+
+		yield [
+			[
+				'active_experiments' => [
+					'experiment_1',
+					'experiment_2',
+					'fruit',
+					'dinner',
+					'dessert',
+				],
+				'enrolled' => [
+					'experiment_1',
+					'experiment_2',
+					'fruit',
+					'dessert',
+				],
+				'assigned' => [
+					'experiment_1' => 'group_1',
+					'experiment_2' => 'group_2',
+					'fruit' => 'tropical',
+					'dessert' => 'gelato-scoops',
+				],
+				'subject_ids' => [
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b',
+					'dessert' => 'bc65059b1450a53402144d102c49cbc2ca6ca4a0d4a9e558fdf4da7969af8901',
+				],
+				'sampling_units' => [
+					'experiment_1' => 'edge-unique',
+					'experiment_2' => 'edge-unique',
+					'fruit' => 'mw-user',
+					'dessert' => 'mw-user',
+				],
+				'overrides' => [],
+			],
+			static::getMultipleExperimentConfigs(),
+			'experiment_1=group_1;experiment_2=group_2',
+			'User is enrolled in multiple experiments (logged-in and everyone)',
 		];
 	}
 
@@ -199,7 +414,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 					'fruit' => 'control'
 				],
 				'subject_ids' => [
-					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4'
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b'
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user'
@@ -233,23 +448,19 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'enrolled' => [
 					'fruit',
-					'dinner',
 					'dessert'
 				],
 				'assigned' => [
 					'fruit' => 'tropical',
 					'dessert' => 'gelato-scoops',
-					'dinner' => 'get-takeout'
 				],
 				'subject_ids' => [
-					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513',
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b',
+					'dessert' => 'bc65059b1450a53402144d102c49cbc2ca6ca4a0d4a9e558fdf4da7969af8901',
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
 					'dessert' => 'mw-user',
-					'dinner' => 'mw-user',
 				],
 				'overrides' => [
 					'fruit',
@@ -270,23 +481,19 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'enrolled' => [
 					'fruit',
-					'dinner',
 					'dessert'
 				],
 				'assigned' => [
 					'fruit' => 'tropical',
 					'dessert' => 'gelato-scoops',
-					'dinner' => 'get-takeout'
 				],
 				'subject_ids' => [
-					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513',
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b',
+					'dessert' => 'bc65059b1450a53402144d102c49cbc2ca6ca4a0d4a9e558fdf4da7969af8901',
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
 					'dessert' => 'mw-user',
-					'dinner' => 'mw-user',
 				],
 				'overrides' => [
 					'fruit',
@@ -307,23 +514,19 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 				],
 				'enrolled' => [
 					'fruit',
-					'dinner',
 					'dessert'
 				],
 				'assigned' => [
 					'fruit' => 'tropical',
-					'dessert' => 'control',
-					'dinner' => 'get-takeout',
+					'dessert' => 'gelato-scoops',
 				],
 				'subject_ids' => [
-					'fruit' => '703dc15f402f02921d844ec4e998ce285ac95f71596cc11f24266922017b8dd4',
-					'dessert' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
-					'dinner' => '36b2f9b733a701393d8d3e9a9cc2f2bb83de54121d8eeff73936cb1fb4911513',
+					'fruit' => '4bcee043d97861cf078d83f45ab8946afd951d5a8c72dc3925ce14ab6b119e5b',
+					'dessert' => 'bc65059b1450a53402144d102c49cbc2ca6ca4a0d4a9e558fdf4da7969af8901',
 				],
 				'sampling_units' => [
 					'fruit' => 'mw-user',
 					'dessert' => 'mw-user',
-					'dinner' => 'mw-user',
 				],
 				'overrides' => [
 					'fruit'
@@ -349,9 +552,10 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		$experimentManager = new ExperimentManager(
 			$experiments,
 			true,
-			$this->mockMetricsClient
+			$this->mockMetricsClient,
+			$this->centralIdLookup
 		);
-		$experimentManager->enrollUser( $this->userId, $this->request );
+		$experimentManager->enrollUser( $this->user, $this->request );
 
 		$actual = $experimentManager->getExperimentEnrollments();
 
@@ -362,8 +566,12 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		$experimentManager = new ExperimentManager(
 			$this->getMultipleExperimentConfigs(),
 			false,
-			$this->mockMetricsClient );
-		$experimentManager->enrollUser( $this->userId, $this->request );
+			$this->mockMetricsClient,
+			$this->centralIdLookup
+		);
+
+		$experimentManager->enrollUser( $this->user, $this->request );
+
 		$actualEnrollmentConfigs = $experimentManager->getExperimentEnrollments();
 		$this->assertEquals( $experimentManager->getExperimentEnrollments(), $actualEnrollmentConfigs );
 	}
@@ -372,16 +580,20 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		$experimentManager = new ExperimentManager(
 			$this->getMultipleExperimentConfigs(),
 			false,
-			$this->mockMetricsClient );
-		$experimentManager->enrollUser( $this->userId, $this->request );
+			$this->mockMetricsClient,
+			$this->centralIdLookup
+		);
+
+		$experimentManager->enrollUser( $this->user, $this->request );
+
 		$actualExperiment = $experimentManager->getExperiment( 'dessert' );
 
 		$expectedExperiment = new Experiment(
 			$this->mockMetricsClient,
 			[
 				'enrolled' => 'dessert',
-				'assigned' => 'control',
-				'subject_id' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
+				'assigned' => 'gelato-scoops',
+				'subject_id' => 'bc65059b1450a53402144d102c49cbc2ca6ca4a0d4a9e558fdf4da7969af8901',
 				'sampling_unit' => 'mw-user',
 				'coordinator' => 'xLab'
 			]
