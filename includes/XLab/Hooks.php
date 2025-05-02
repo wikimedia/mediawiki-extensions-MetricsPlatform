@@ -83,12 +83,10 @@ class Hooks implements BeforePageDisplayHook {
 		// Enroll the current user into active experiments.
 		// Sets the experiment config in PHP for the user's experiment enrollment data.
 		$experimentManager->enrollUser( $userId, $out->getRequest() );
+		$enrollments = $experimentManager->getExperimentEnrollments();
 
 		// Set the JS config variable for the user's experiment enrollment data.
-		$out->addJsConfigVars(
-			'wgMetricsPlatformUserExperiments',
-			$experimentManager->getExperimentEnrollments()
-		);
+		$out->addJsConfigVars( 'wgMetricsPlatformUserExperiments', $enrollments );
 
 		// The `ext.xLab` module contains the JS xLab SDK that is the API the feature code will use to get
 		// the experiments and the corresponding assigned group for the current user
@@ -96,5 +94,9 @@ class Hooks implements BeforePageDisplayHook {
 		// The `ext.xLab` module also contains some QA-related functions. Those functions are sent to the
 		// browser when we allow experiment enrollment overrides via `MetricsPlatformEnableExperimentOverrides`
 		$out->addModules( 'ext.xLab' );
+
+		// T393101: Add CSS classes representing experiment enrollment and assignment automatically so that experiment
+		// implementers don't have to do this themselves.
+		$out->addBodyClasses( EnrollmentCssClassSerializer::serialize( $enrollments ) );
 	}
 }
