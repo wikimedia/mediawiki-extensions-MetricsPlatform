@@ -4,7 +4,6 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
 use MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation;
 use MediaWiki\Request\WebRequest;
-use MediaWiki\User\UserIdentity;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -190,10 +189,10 @@ class ExperimentManager implements LoggerAwareInterface {
 	 * * `dark-mode-ab-test:dark-mode`
 	 * * `sticky-header-ab-test:control`
 	 *
-	 * @param UserIdentity $user
+	 * @param int $userId
 	 * @param WebRequest $request
 	 */
-	public function enrollUser( UserIdentity $user, WebRequest $request ): void {
+	public function enrollUser( int $userId, WebRequest $request ): void {
 		$result = [
 			'active_experiments' => [],
 			'enrolled' => [],
@@ -211,7 +210,7 @@ class ExperimentManager implements LoggerAwareInterface {
 			$experimentName = $experiment['name'];
 
 			// Get the user's hash (with experiment name) to assign groups deterministically.
-			$userHash = $this->userSplitterInstrumentation->getUserHash( $user->getId(), $experimentName );
+			$userHash = $this->userSplitterInstrumentation->getUserHash( $userId, $experimentName );
 			$samplingRatio = $experiment['sampleConfig']['rate'];
 
 			$groups = $experiment['groups'];
@@ -229,7 +228,7 @@ class ExperimentManager implements LoggerAwareInterface {
 
 				// subject_ids and sampling_units will be included
 				$result['subject_ids'][$experimentName] =
-					$this->userSplitterInstrumentation->getSubjectId( $user->getId(), $experimentName );
+					$this->userSplitterInstrumentation->getSubjectId( $userId, $experimentName );
 				$result['sampling_units'][$experimentName] = 'mw-user';
 			// If the user is in sample for the experiment, then assign them to a group.
 			} elseif ( $this->userSplitterInstrumentation->isSampled( $samplingRatio, $groups, $userHash ) ) {
@@ -239,7 +238,7 @@ class ExperimentManager implements LoggerAwareInterface {
 
 				// subject_ids and sampling_units will be included
 				$result['subject_ids'][$experimentName] =
-					$this->userSplitterInstrumentation->getSubjectId( $user->getId(), $experimentName );
+					$this->userSplitterInstrumentation->getSubjectId( $userId, $experimentName );
 				$result['sampling_units'][$experimentName] = 'mw-user';
 			}
 

@@ -7,8 +7,6 @@ use MediaWiki\Extension\MetricsPlatform\XLab\Experiment;
 use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
 use MediaWiki\Request\FauxRequest;
 use MediaWiki\Request\WebRequest;
-use MediaWiki\User\UserIdentity;
-use MediaWiki\User\UserIdentityValue;
 use MediaWikiIntegrationTestCase;
 use Wikimedia\MetricsPlatform\MetricsClient;
 
@@ -26,14 +24,14 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 		'subject_ids' => [],
 	];
 
-	private UserIdentity $user;
+	private int $userId;
 	private WebRequest $request;
 	private MetricsClient $mockMetricsClient;
 
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->user = new UserIdentityValue( 123, self::class );
+		$this->userId = 123;
 		$this->request = new FauxRequest();
 		$this->mockMetricsClient = $this->createMock( MetricsClient::class );
 	}
@@ -51,7 +49,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 			false,
 			$this->mockMetricsClient
 		);
-		$experiment->enrollUser( $this->user, $this->request );
+		$experiment->enrollUser( $this->userId, $this->request );
 
 		$actual = $experiment->getExperimentEnrollments();
 
@@ -353,7 +351,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 			true,
 			$this->mockMetricsClient
 		);
-		$experimentManager->enrollUser( $this->user, $this->request );
+		$experimentManager->enrollUser( $this->userId, $this->request );
 
 		$actual = $experimentManager->getExperimentEnrollments();
 
@@ -365,7 +363,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 			$this->getMultipleExperimentConfigs(),
 			false,
 			$this->mockMetricsClient );
-		$experimentManager->enrollUser( $this->user, $this->request );
+		$experimentManager->enrollUser( $this->userId, $this->request );
 		$actualEnrollmentConfigs = $experimentManager->getExperimentEnrollments();
 		$this->assertEquals( $experimentManager->getExperimentEnrollments(), $actualEnrollmentConfigs );
 	}
@@ -375,7 +373,7 @@ class ExperimentManagerTest extends MediaWikiIntegrationTestCase {
 			$this->getMultipleExperimentConfigs(),
 			false,
 			$this->mockMetricsClient );
-		$experimentManager->enrollUser( $this->user, $this->request );
+		$experimentManager->enrollUser( $this->userId, $this->request );
 		$actualExperiment = $experimentManager->getExperiment( 'dessert' );
 
 		$expectedExperiment = new Experiment(

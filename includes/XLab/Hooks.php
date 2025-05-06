@@ -82,7 +82,7 @@ class Hooks implements BeforePageDisplayHook {
 
 		// Enroll the current user into active experiments.
 		// Sets the experiment config in PHP for the user's experiment enrollment data.
-		$experimentManager->enrollUser( $out->getUser(), $out->getRequest() );
+		$experimentManager->enrollUser( $userId, $out->getRequest() );
 
 		// Set the JS config variable for the user's experiment enrollment data.
 		$out->addJsConfigVars(
