@@ -48,7 +48,7 @@ function getExperiment( experimentName ) {
 		subjectId = samplingUnit === 'mw-user' ?
 			userExperiments.subject_ids[ experimentName ] :
 			'awaiting';
-		coordinator = userExperiments.overrides.indexOf( experimentName ) !== -1 ? 'forced' : 'xLab';
+		coordinator = userExperiments.overrides.includes( experimentName ) ? 'forced' : 'xLab';
 	} else {
 		mw.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
 			'Is the experiment configured and running?' );
@@ -86,7 +86,7 @@ function overrideExperimentGroup(
 	if ( rawOverrides === '' ) {
 		// If the cookie isn't set, then the value of the cookie is the given override.
 		setCookieAndReload( part );
-	} else if ( rawOverrides.indexOf( `${ experimentName }` ) === -1 ) {
+	} else if ( !rawOverrides.includes( `${ experimentName }` ) ) {
 		// If the cookie is set but doesn't have an override for the given experiment name/group
 		// variant pair, then append the given override.
 		setCookieAndReload( `${ rawOverrides };${ part }` );

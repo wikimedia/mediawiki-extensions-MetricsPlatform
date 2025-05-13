@@ -104,7 +104,7 @@ Experiment.prototype.send = function ( action, interactionData ) {
  * @return {boolean}
  */
 Experiment.prototype.isAssignedGroup = function ( ...groups ) {
-	return groups.indexOf( this.assignedGroup ) !== -1;
+	return groups.includes( this.assignedGroup );
 };
 
 module.exports = Experiment;
