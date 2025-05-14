@@ -1,4 +1,4 @@
-const SCHEMA_ID = '/analytics/product_metrics/web/base/1.4.1';
+const SCHEMA_ID = '/analytics/product_metrics/web/base/1.4.2';
 const STREAM_NAME = 'product_metrics.web_base';
 
 /**
