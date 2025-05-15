@@ -20,10 +20,9 @@
 		},
 		"wmf": {
 			"repository": "https://gerrit.wikimedia.org/g/mediawiki/extensions/MetricsPlatform/",
-			"prefixMap": {
-				"mw.": "https://doc.wikimedia.org/mediawiki-core/master/js/{type}.html"
-			},
-			"linkMap": {}
+			"linkMap": {
+				"mw.eventLog.submitInteraction": "https://doc.wikimedia.org/EventLogging/master/js/mw.eventLog.html#.submitInteraction"
+			}
 		}
 	}
 }
