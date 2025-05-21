@@ -29,7 +29,7 @@ class ExperimentTest extends MediaWikiUnitTestCase {
 	private $streamName = 'product_metrics.web_base';
 
 	/** @var string */
-	private $schemaId = '/analytics/product_metrics/web/base/1.4.1';
+	private $schemaId = '/analytics/product_metrics/web/base/1.4.2';
 
 	/** @var string */
 	private $action = 'test_action';
