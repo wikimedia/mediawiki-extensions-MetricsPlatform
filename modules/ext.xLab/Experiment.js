@@ -89,6 +89,26 @@ Experiment.prototype.send = function ( action, interactionData ) {
 };
 
 /**
+ * Submits an event related to this experiment
+ *
+ * This method makes `Experiment` compatible with [the click-through rate implementation in the
+ * `ext.wikimediaEvents.xLab` ResourceLoader module][0] by proxying to {@link Experiment#send}.
+ * Calling this outside of xLab is not supported.
+ *
+ * [0]: https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/WikimediaEvents/+/master/modules/ext.wikimediaEvents.xLab/ClickThroughRateInstrument.js
+ *
+ * @see https://phabricator.wikimedia.org/T394675
+ *
+ * @package
+ *
+ * @param {string} action The action related to the submitted event
+ * @param {Object} interactionData Additional data
+ */
+Experiment.prototype.submitInteraction = function ( action, interactionData ) {
+	this.send( action, interactionData );
+};
+
+/**
  * Gets whether the assigned group for the current user in this experiment is one of the given
  * groups.
  *
