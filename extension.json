@@ -54,18 +54,18 @@
 			]
 		},
 		"XLabMain": {
-			"factory": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\Hooks::newInstance",
+			"class": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\Hooks",
 			"services": [
 				"MainConfig",
 				"MetricsPlatform.ConfigsFetcher",
-				"MetricsPlatform.ExperimentManagerFactory",
-				"CentralIdLookup"
+				"MetricsPlatform.XLab.EnrollmentAuthority",
+				"MetricsPlatform.XLab.ExperimentManager"
 			]
 		}
 	},
 	"Hooks": {
 		"GetStreamConfigs": "main",
-		"BeforePageDisplay": "XLabMain"
+		"BeforeInitialize": "XLabMain"
 	},
 	"ResourceModules": {
 		"ext.xLab": {

@@ -2,91 +2,107 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\unit;
 
+use DomainException;
+use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder;
+use MediaWiki\Extension\MetricsPlatform\XLab\Experiment;
 use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
-use MediaWiki\User\CentralId\CentralIdLookup;
 use MediaWikiUnitTestCase;
-use ReflectionMethod;
+use Psr\Log\LoggerInterface;
 use Wikimedia\MetricsPlatform\MetricsClient;
 
 /**
  * @covers \MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager
  */
 class ExperimentManagerTest extends MediaWikiUnitTestCase {
-
+	private LoggerInterface $logger;
+	private MetricsClient $metricsPlatformClient;
 	private ExperimentManager $experimentManager;
-	private array $experiments = [
-		[
-			'slug' => 'dinner',
-			'groups' => [
-				'control',
-				'soap'
-			],
-			'status' => 1,
-			'sample' => [
-				'rate' => '0.25'
-			]
-		]
-	];
 
 	public function setUp(): void {
 		parent::setUp();
-		$mockMetricsClient = $this->createMock( MetricsClient::class );
-		$mockCentralIdLookup = $this->createMock( CentralIdLookup::class );
 
-		$this->experimentManager = new ExperimentManager(
-			$this->experiments,
-			false,
-			$mockMetricsClient,
-			$mockCentralIdLookup
+		$this->logger = $this->createMock( LoggerInterface::class );
+		$this->metricsPlatformClient = $this->createMock( MetricsClient::class );
+		$this->experimentManager = new ExperimentManager( $this->logger, $this->metricsPlatformClient );
+
+		$enrollmentResult = new EnrollmentResultBuilder();
+
+		$enrollmentResult->addExperiment( 'main-course' );
+		$enrollmentResult->addEnrollment(
+			'main-course',
+			'treatment',
+			'asiwyfa',
+			'mw-user'
 		);
+		$enrollmentResult->addOverride( 'main-course', 'control' );
+
+		$enrollmentResult->addExperiment( 'dessert' );
+		$enrollmentResult->addEnrollment(
+			'dessert',
+			'control',
+			'603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
+			'mw-user'
+		);
+
+		$this->experimentManager->initialize( $enrollmentResult->build() );
 	}
 
-	public function testParseExperimentEnrollmentsHeader() {
-		$parseExperimentEnrollmentsHeader = new ReflectionMethod(
-			$this->experimentManager, 'parseExperimentEnrollmentsHeader'
-		);
-		$parseExperimentEnrollmentsHeader->setAccessible( true );
-		$parsedValue = $parseExperimentEnrollmentsHeader->invoke(
-			$this->experimentManager, 'experiment_1=group_1;experiment_2=group_2'
+	public function testInitializeThrows(): void {
+		$this->expectException( DomainException::class );
+		$this->expectExceptionMessage( 'ExperimentManager has already been initialized.' );
+
+		$enrollmentResult = new EnrollmentResultBuilder();
+		$enrollmentResult->addExperiment( 'my-awesome-experiment' );
+		$enrollmentResult->addEnrollment(
+			'my-awesome-experiment',
+			'treatment',
+			'asiwyfa',
+			'mw-user'
 		);
 
-		$this->assertEquals(
+		$this->experimentManager->initialize( $enrollmentResult->build() );
+	}
+
+	public function testGetExperiment(): void {
+		$expectedExperiment = new Experiment(
+			$this->metricsPlatformClient,
 			[
-				'experiment_1' => 'group_1',
-				'experiment_2' => 'group_2'
-			],
-			$parsedValue );
+				'enrolled' => 'dessert',
+				'assigned' => 'control',
+				'subject_id' => '603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
+				'sampling_unit' => 'mw-user',
+				'coordinator' => 'xLab'
+			]
+		);
+		$actualExperiment = $this->experimentManager->getExperiment( 'dessert' );
+
+		$this->assertEquals( $expectedExperiment, $actualExperiment );
 	}
 
-	public function testParseEmptyExperimentEnrollmentsHeader() {
-		$parseExperimentEnrollmentsHeader = new ReflectionMethod(
-			$this->experimentManager, 'parseExperimentEnrollmentsHeader'
+	public function testGetOverriddenExperiment(): void {
+		$expectedExperiment = new Experiment(
+			$this->metricsPlatformClient,
+			[
+				'enrolled' => 'main-course',
+				'assigned' => 'control',
+				'subject_id' => 'asiwyfa',
+				'sampling_unit' => 'mw-user',
+				'coordinator' => 'forced'
+			]
 		);
-		$parseExperimentEnrollmentsHeader->setAccessible( true );
-		$parsedValue = $parseExperimentEnrollmentsHeader->invoke( $this->experimentManager, '' );
+		$actualExperiment = $this->experimentManager->getExperiment( 'main-course' );
 
-		$this->assertEquals( [], $parsedValue );
+		$this->assertEquals( $expectedExperiment, $actualExperiment );
 	}
 
-	public function testParseWrongExperimentEnrollmentsHeader() {
-		$parseExperimentEnrollmentsHeader = new ReflectionMethod(
-			$this->experimentManager, 'parseExperimentEnrollmentsHeader'
-		);
-		$parseExperimentEnrollmentsHeader->setAccessible( true );
-		$parsedValue = $parseExperimentEnrollmentsHeader->invoke( $this->experimentManager, 'wrong-value' );
+	public function testGetExperimentLogsInformationalMessage(): void {
+		$this->logger->expects( $this->once() )
+			->method( 'info' )
+			->with( 'The foo experiment is not registered. Is the experiment configured and running?' );
 
-		$this->assertEquals( [], $parsedValue );
-	}
+		$expectedExperiment = new Experiment( $this->metricsPlatformClient, [] );
+		$actualExperiment = $this->experimentManager->getExperiment( 'foo' );
 
-	public function testParseMalformedExperimentEnrollmentsHeader() {
-		$parseExperimentEnrollmentsHeader = new ReflectionMethod(
-			$this->experimentManager, 'parseExperimentEnrollmentsHeader'
-		);
-		$parseExperimentEnrollmentsHeader->setAccessible( true );
-		$parsedValue = $parseExperimentEnrollmentsHeader->invoke(
-			$this->experimentManager, 'experiment_1=valid_group_1;wrong-value'
-		);
-
-		$this->assertEquals( [], $parsedValue );
+		$this->assertEquals( $expectedExperiment, $actualExperiment );
 	}
 }

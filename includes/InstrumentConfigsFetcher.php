@@ -119,7 +119,7 @@ class InstrumentConfigsFetcher {
 				request timeout, etc.
 				*/
 				if ( $json === null ) {
-					$this->logger->warning( 'XLab API is not working.' );
+					$this->logger->warning( 'xLab API is not working.' );
 					return [];
 				}
 				return FormatJson::decode( $json, true );
@@ -142,12 +142,12 @@ class InstrumentConfigsFetcher {
 	}
 
 	/**
-	 * Post-processes the result of successful request to XLab by:
+	 * Post-processes the result of successful request to xLab by:
 	 *
 	 * 1. Filtering out disabled instruments/experiments (`status=0`)
 	 * 2. Extracting the sample config for the current wiki
 	 *
-	 * @param array $result An array of configs retrieved from XLab
+	 * @param array $result An array of configs retrieved from xLab
 	 *  TODO: Add a link to the latest response format specification
 	 * @return array
 	 */
@@ -201,7 +201,7 @@ class InstrumentConfigsFetcher {
 	}
 
 	/**
-	 * Increment success/failure of XLab API requests.
+	 * Increment success/failure of xLab API requests.
 	 *
 	 * @param string $label
 	 */
@@ -212,7 +212,7 @@ class InstrumentConfigsFetcher {
 	}
 
 	/**
-	 * Record duration of XLab API requests.
+	 * Record duration of xLab API requests.
 	 *
 	 * @param float $startTime
 	 */

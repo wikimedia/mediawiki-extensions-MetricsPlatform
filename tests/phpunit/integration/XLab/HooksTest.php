@@ -2,30 +2,30 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration;
 
-use MediaWiki\Config\ServiceOptions;
+use MediaWiki\Actions\ActionEntryPoint;
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\MetricsPlatform\XLab\Hooks;
+use MediaWiki\MediaWikiEntryPoint;
 use MediaWiki\Output\OutputPage;
-use MediaWiki\Skin\SkinTemplate;
 use MediaWiki\User\CentralId\CentralIdLookup;
 use MediaWikiIntegrationTestCase;
 use MockHttpTrait;
 use User;
 
 /**
- * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Hooks::onBeforePageDisplay
- * @group MetricsPlatform
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Hooks
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentRequest
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentAuthority
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EveryoneExperimentsEnrollmentAuthority
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\LoggedInExperimentsEnrollmentAuthority
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\OverridesEnrollmentAuthority
  */
-class ParsingExperimentEnrollmentsHeaderTest
+class HooksTest
 	extends MediaWikiIntegrationTestCase
 {
 	use MockHttpTrait;
-
-	public const CONSTRUCTOR_OPTIONS = [
-		'MetricsPlatformEnableExperiments',
-		'MetricsPlatformEnableExperimentOverrides',
-		'MetricsPlatformEnableExperimentConfigsFetching'
-	];
 
 	private const NO_ENROLLMENTS = [
 		'active_experiments' => [],
@@ -35,8 +35,10 @@ class ParsingExperimentEnrollmentsHeaderTest
 		'sampling_units' => [],
 		'overrides' => []
 	];
-
 	private CentralIdLookup $centralIdLookup;
+	private RequestContext $context;
+	private OutputPage $output;
+	private MediaWikiEntryPoint $entryPoint;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -50,7 +52,7 @@ class ParsingExperimentEnrollmentsHeaderTest
 
 		$this->installMockHttp( $this->makeFakeHttpRequest( '[
 			{
-    			"slug": "logged-in-experiment-1",
+    			"name": "logged-in-experiment-1",
                 "status": 1,
     			"sample_rate": {
     	  			"default": 1
@@ -58,7 +60,7 @@ class ParsingExperimentEnrollmentsHeaderTest
      			"groups": [ "control", "group-something" ]
 			},
 			{
-    			"slug": "logged-in-experiment-2",
+    			"name": "logged-in-experiment-2",
                 "status": 1,
     			"sample_rate": {
     	  			"default": 1
@@ -70,31 +72,47 @@ class ParsingExperimentEnrollmentsHeaderTest
 
 		// CentralIdLookup service
 		$this->centralIdLookup = $this->createMock( CentralIdLookup::class );
-
 		$this->setService( 'CentralIdLookup', $this->centralIdLookup );
 
-		// Finally...
 		$this->resetServices();
+
+		$this->context = new RequestContext();
+		$this->output = new OutputPage( $this->context );
+		$this->entryPoint = $this->createMock( ActionEntryPoint::class );
+	}
+
+	private function onBeforeInitialize(): array {
+		$services = $this->getServiceContainer();
+
+		$hooks = new Hooks(
+			$services->getMainConfig(),
+			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
+			$services->getService( 'MetricsPlatform.XLab.EnrollmentAuthority' ),
+			$services->getService( 'MetricsPlatform.XLab.ExperimentManager' )
+		);
+
+		$hooks->onBeforeInitialize(
+			$this->context->getTitle(),
+			null,
+			$this->output,
+			$this->context->getUser(),
+			$this->context->getRequest(),
+			$this->entryPoint
+		);
+
+		return $this->output->getJsConfigVars()['wgMetricsPlatformUserExperiments'];
 	}
 
 	/**
 	 * Tests `X-Experiment-Enrollments` header when only everyone experiments are running
 	 */
 	public function testOnlyEveryoneExperiments(): void {
-		$services = $this->getServiceContainer();
-
-		$context = new RequestContext();
-		$context->getRequest()->setHeader( 'X-Experiment-Enrollments', 'experiment_1=group_1;experiment_2=group_2' );
-		$out = new OutputPage( $context );
-		$skin = new SkinTemplate();
-		$hooks = new Hooks(
-			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $services->getMainConfig() ),
-			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
-			$services->getService( 'MetricsPlatform.ExperimentManagerFactory' )
+		$this->context->getRequest()->setHeader(
+			'X-Experiment-Enrollments',
+			'experiment_1=group_1;experiment_2=group_2'
 		);
-		$hooks->onBeforePageDisplay( $out, $skin );
 
-		$result = $out->getJsConfigVars()['wgMetricsPlatformUserExperiments'];
+		$actual = $this->onBeforeInitialize();
 		$expected = [
 			'active_experiments' => [
 				'experiment_1',
@@ -108,7 +126,10 @@ class ParsingExperimentEnrollmentsHeaderTest
 				'experiment_1' => 'group_1',
 				'experiment_2' => 'group_2'
 			],
-			'subject_ids' => [],
+			'subject_ids' => [
+				'experiment_1' => 'awaiting',
+				'experiment_2' => 'awaiting',
+			],
 			'sampling_units' => [
 				'experiment_1' => 'edge-unique',
 				'experiment_2' => 'edge-unique'
@@ -118,7 +139,7 @@ class ParsingExperimentEnrollmentsHeaderTest
 
 		$this->assertEquals(
 			$expected,
-			$result,
+			$actual,
 			'X-Experiment-Enrollments header has been parsed correctly'
 		);
 	}
@@ -127,32 +148,24 @@ class ParsingExperimentEnrollmentsHeaderTest
 	 * Tests `X-Experiment-Enrollments` header when everyone and logged-in experiments are running
 	 */
 	public function testEveryoneAndLoggedInExperiments(): void {
-		$services = $this->getServiceContainer();
+		$this->context->getRequest()->setHeader(
+			'X-Experiment-Enrollments',
+			'experiment_1=group_1;experiment_2=group_2'
+		);
 
-		$context = new RequestContext();
-		$context->getRequest()->setHeader( 'X-Experiment-Enrollments', 'experiment_1=group_1;experiment_2=group_2' );
-
+		// The user is registered (they have a local ID > 0) and they have a central user ID > 0
+		// as well.
 		$user = new User();
 		$user->setName( 'TestUser' );
 		$user->setId( 123 );
-		$context->setUser( $user );
+		$this->context->setUser( $user );
 
 		$this->centralIdLookup->expects( $this->once() )
 			->method( 'centralIdFromLocalUser' )
 			->with( $user )
 			->willReturn( 321 );
 
-		$out = new OutputPage( $context );
-
-		$skin = new SkinTemplate();
-		$hooks = new Hooks(
-			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $services->getMainConfig() ),
-			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
-			$services->getService( 'MetricsPlatform.ExperimentManagerFactory' )
-		);
-		$hooks->onBeforePageDisplay( $out, $skin );
-
-		$result = $out->getJsConfigVars()['wgMetricsPlatformUserExperiments'];
+		$actual = $this->onBeforeInitialize();
 		$expected = [
 			'active_experiments' => [
 				'experiment_1',
@@ -173,6 +186,8 @@ class ParsingExperimentEnrollmentsHeaderTest
 				'logged-in-experiment-2' => 'group-other-thing',
 			],
 			'subject_ids' => [
+				'experiment_1' => 'awaiting',
+				'experiment_2' => 'awaiting',
 				'logged-in-experiment-1' => '9b6a4e7d98cd96a463fbcadb9e9edfdd9e4b5d9560c79b9d16b38599cb23128e',
 				'logged-in-experiment-2' => '94d25f0b2bd16c79bad41a0b9713a604e6b709ffe30124f5bb68bcae9d57ba38',
 			],
@@ -187,7 +202,7 @@ class ParsingExperimentEnrollmentsHeaderTest
 
 		$this->assertEquals(
 			$expected,
-			$result,
+			$actual,
 			'X-Experiment-Enrollments header has been parsed correctly'
 		);
 	}
@@ -196,24 +211,11 @@ class ParsingExperimentEnrollmentsHeaderTest
 	 * Tests whether the `X-Experiment-Enrollments` header is malformed
 	 */
 	public function testHeaderIsMalformed(): void {
-		$services = $this->getServiceContainer();
-
-		$context = new RequestContext();
-		$context->getRequest()->setHeader( 'X-Experiment-Enrollments', 'something-is-wrong-here' );
-		$out = new OutputPage( $context );
-		$skin = new SkinTemplate();
-		$hooks = new Hooks(
-			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $services->getMainConfig() ),
-			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
-			$services->getService( 'MetricsPlatform.ExperimentManagerFactory' )
-		);
-		$hooks->onBeforePageDisplay( $out, $skin );
-
-		$result = $out->getJsConfigVars()['wgMetricsPlatformUserExperiments'];
+		$this->context->getRequest()->setHeader( 'X-Experiment-Enrollments', 'something-is-wrong-here' );
 
 		$this->assertEquals(
 			self::NO_ENROLLMENTS,
-			$result,
+			$this->onBeforeInitialize(),
 			'X-Experiment-Enrollments header is malformed and has been considered as empty'
 		);
 	}
@@ -222,27 +224,14 @@ class ParsingExperimentEnrollmentsHeaderTest
 	 * Tests whether the `X-Experiment-Enrollments` header is partially malformed
 	 */
 	public function testHeaderIsPartiallyMalformed(): void {
-		$services = $this->getServiceContainer();
-
-		$context = new RequestContext();
-		$context->getRequest()->setHeader(
+		$this->context->getRequest()->setHeader(
 			'X-Experiment-Enrollments',
 			'experiment_1=group1;header-is-partially-malformed'
 		);
-		$out = new OutputPage( $context );
-		$skin = new SkinTemplate();
-		$hooks = new Hooks(
-			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $services->getMainConfig() ),
-			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
-			$services->getService( 'MetricsPlatform.ExperimentManagerFactory' )
-		);
-		$hooks->onBeforePageDisplay( $out, $skin );
-
-		$result = $out->getJsConfigVars()['wgMetricsPlatformUserExperiments'];
 
 		$this->assertEquals(
 			self::NO_ENROLLMENTS,
-			$result,
+			$this->onBeforeInitialize(),
 			'X-Experiment-Enrollments header is partially malformed and has been considered as empty'
 		);
 	}
@@ -251,25 +240,24 @@ class ParsingExperimentEnrollmentsHeaderTest
 	 * Tests whether the `X-Experiment-Enrollments` header is not present
 	 */
 	public function testHeaderIsNotPresent(): void {
-		$services = $this->getServiceContainer();
-
-		$context = new RequestContext();
-
-		$out = new OutputPage( $context );
-		$skin = new SkinTemplate();
-		$hooks = new Hooks(
-			new ServiceOptions( self::CONSTRUCTOR_OPTIONS, $services->getMainConfig() ),
-			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
-			$services->getService( 'MetricsPlatform.ExperimentManagerFactory' )
-		);
-		$hooks->onBeforePageDisplay( $out, $skin );
-
-		$result = $out->getJsConfigVars()['wgMetricsPlatformUserExperiments'];
-
 		$this->assertEquals(
 			self::NO_ENROLLMENTS,
-			$result,
+			$this->onBeforeInitialize(),
 			'X-Experiment-Enrollments header is not present so there are no enrollments for everyone experiments'
+		);
+	}
+
+	/**
+	 * Tests whether the ext.xLab module is added to the output even when the user is not enrolled in any active
+	 * experiments.
+	 */
+	public function testModuleIsAdded(): void {
+		$this->onBeforeInitialize();
+
+		$this->assertContains(
+			'ext.xLab',
+			$this->output->getModules(),
+			'The ext.xLab module is added to the output when the user is not enrolled in any active experiments'
 		);
 	}
 }
