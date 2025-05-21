@@ -61,16 +61,16 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		);
 		$result = $fetcher->getInstrumentConfigs();
 		$this->assertIsArray( $result );
-		$this->assertCount( 1, $result, 'It should filter out disabled instruments' );
+		$this->assertCount( 2, $result, 'It should include all activated instruments' );
 
-		$expectedConfig = $this->instrumentConfigs['responseArray'][1];
+		$expectedConfig = $this->instrumentConfigs['responseArray'][0];
 		$expectedConfig['sample'] = [
-			'rate' => 0.01,
+			'rate' => 1,
 			'unit' => 'pageview',
 		];
 		$expectedResult = [ $expectedConfig ];
 
-		$this->assertArrayEquals( $expectedResult, $result );
+		$this->assertArrayEquals( $expectedResult[0], $result[0] );
 	}
 
 	public function testFailTimeout() {

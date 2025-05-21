@@ -17,7 +17,7 @@ class InstrumentConfigsFetcher {
 	private const INSTRUMENT = 1;
 	private const EXPERIMENT = 2;
 	public const XLAB_API_INSTRUMENTS_ENDPOINT = "/api/v1/instruments";
-	public const XLAB_API_EXPERIMENTS_ENDPOINT = "/api/v1/experiments";
+	public const XLAB_API_EXPERIMENTS_ENDPOINT = "/api/v1/experiments?format=config&authority=mediawiki";
 
 	/**
 	 * Name of the main config key(s) for instrument configuration.
@@ -156,10 +156,6 @@ class InstrumentConfigsFetcher {
 		$processedResult = [];
 
 		foreach ( $result as $config ) {
-			if ( !$config['status'] ) {
-				continue;
-			}
-
 			$config['sample'] = $this->getSampleConfig( $config, $dbName );
 
 			$processedResult[] = $config;
