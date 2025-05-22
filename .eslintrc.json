@@ -14,7 +14,7 @@
 		]
 	},
 	"ignorePatterns": [
-		"docs"
+		"docs/"
 	],
 	"env": {
 		"commonjs": true
