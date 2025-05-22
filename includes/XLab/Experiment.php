@@ -6,7 +6,7 @@ use Wikimedia\MetricsPlatform\MetricsClient;
 
 class Experiment implements ExperimentInterface {
 	private const BASE_STREAM = 'product_metrics.web_base';
-	private const BASE_SCHEMAID = '/analytics/product_metrics/web/base/1.4.1';
+	private const BASE_SCHEMAID = '/analytics/product_metrics/web/base/1.4.2';
 
 	/** @var MetricsClient */
 	private $metricsClient;
