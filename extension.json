@@ -43,6 +43,10 @@
 		"MetricsPlatformEnableExperimentConfigsFetching": {
 			"description": "Enable fetching experiment configs from XLab if no experiments are defined in $wgMetricsPlatformExperiments.",
 			"value": false
+		},
+		"MetricsPlatformExperimentEventIntakeServiceUrl": {
+			"description": "The URL of the EventGate experiment-related event intake service.",
+			"value": "http://localhost:8080/v1/events?hasty=true"
 		}
 	},
 	"HookHandlers": {
@@ -77,7 +81,8 @@
 				{
 					"name": "config.json",
 					"config": [
-						"MetricsPlatformEnableExperimentOverrides"
+						"MetricsPlatformEnableExperimentOverrides",
+						"MetricsPlatformExperimentEventIntakeServiceUrl"
 					]
 				}
 			],

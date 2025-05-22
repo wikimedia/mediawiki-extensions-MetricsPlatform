@@ -2,33 +2,38 @@ const SCHEMA_ID = '/analytics/product_metrics/web/base/1.4.2';
 const STREAM_NAME = 'product_metrics.web_base';
 
 /**
- * This class represents an experiment composed of the
- * name of the experiment and the group which the current user has been
- * assigned to (it will be set to null when either the experiment doesn't
- * exist, the user is not enrolled or MetrisPlatform experimentation
- * capabilities have not been enabled via `MetricsPlatformEnableExperiments`)
- *
- * ```
- * // An experiment can be instantiated via `mw.xLab.getExperiment()`
- * function:
- * const experiment = mw.xLab.getExperiment( 'my_experiment' );
- * // Developers can get the assigned group
- * experiment.getAssignedGroup();
- * // The experiment can submit a related event
- * experiment.submitInteraction( action );
- * ```
- *
  * @constructor
- * @class Experiment
+ * @classdesc This class represents an experiment enrolment for the current user. You can use it to
+ *  get which group the user was assigned when they were enrolled into the experiment and send
+ *  experiment-related analytics events.
  *
- * @param {string} name The name of this experiment
- * @param {string} assignedGroup The assigned group for this experiment
- * @param {string} subjectId The subject id for this experiment
- * @param {string} samplingUnit The sampling unit for this experiment
- * @param {string} coordinator The coordinator that has set the enrollment for this experiment: `xLab`
- * if the enrollment is not overriden and `forced` in the case it's
+ *  Note well that this class should be constructed using `mw.xLab.getExperiment()` instead, e.g.
+ *
+ *  ```
+ * const experiment = mw.xLab.getExperiment( 'my-awesome-experiment' );
+ * ```
+ *
+ * @package
+ *
+ * @param {Object} metricsClient
+ * @param {string} name
+ * @param {string|null} assignedGroup
+ * @param {string} [subjectId] The subject ID for this experiment
+ * @param {string} [samplingUnit] The sampling unit for this experiment
+ * @param {string} [coordinator] The name of the system that coordinated the enrollment of the user
+ *  into the experiment. This parameter is used as the value for the `experiment.coordinator` field
+ *  on all analytics events sent via {@link Experiment#send} so it should be one of `xLab`,
+ *  `custom`, or `forced`
  */
-function Experiment( name, assignedGroup, subjectId, samplingUnit, coordinator ) {
+function Experiment(
+	metricsClient,
+	name,
+	assignedGroup,
+	subjectId,
+	samplingUnit,
+	coordinator
+) {
+	this.metricsClient = metricsClient;
 	this.name = name;
 	this.assignedGroup = assignedGroup;
 	this.subjectId = subjectId;
@@ -37,36 +42,41 @@ function Experiment( name, assignedGroup, subjectId, samplingUnit, coordinator )
 }
 
 /**
- * Checks whether or not the user is enrolled in this experiment
+ * Checks whether the current user is enrolled in the experiment.
  *
  * @ignore
- * @return {boolean} true is the current user is enrolled in this experiment. false otherwise
+ * @return {boolean}
  */
 function isEnrolled() {
 	return this.assignedGroup !== null;
 }
 
 /**
- * Returns the assigned group for this experiment for the current user
+ * Gets the group assigned to the current user.
  *
- * @return {string} the assigned group for the current user if they are enrolled in this experiment
- * or null if the user isn't
+ * @return {string|null}
  */
 Experiment.prototype.getAssignedGroup = function () {
 	return this.assignedGroup;
 };
 
 /**
- * Submits an event related to this experiment
- * The entire `experiment` fragment will be filled automatically
- * and, optionally, additional data can be added as interaction data
+ * Sends an analytics event related to the experiment.
  *
- * @param {string} action The action related to the submitted event
- * @param {Object} interactionData Additional data
+ * If the user is enrolled in the experiment, then the event is decorated with experiment-related
+ * data and sent. The experiment-related data are specified and documented in
+ * [the `fragment/analytics/product_metrics/experiment` schema fragment][0].
+ *
+ * [0]: https://gitlab.wikimedia.org/repos/data-engineering/schemas-event-secondary/-/blob/master/jsonschema/fragment/analytics/product_metrics/experiment/current.yaml?ref_type=heads
+ *
+ * @see mw.eventLog.submitInteraction
+ *
+ * @param {string} action The action that the user enrolled in this experiment took, e.g. "hover",
+ *  "click"
+ * @param {Object} [interactionData] Additional data about the action that the user enrolled in the
+ *  experiment took
  */
 Experiment.prototype.send = function ( action, interactionData ) {
-	// If the user is not enrolled in this experiment, it won't be able
-	// to send events
 	if ( !isEnrolled.call( this ) ) {
 		return;
 	}
@@ -76,16 +86,14 @@ Experiment.prototype.send = function ( action, interactionData ) {
 		experiment: {
 			enrolled: this.name,
 			assigned: this.assignedGroup,
-
 			subject_id: this.subjectId,
-
 			sampling_unit: this.samplingUnit,
 			coordinator: this.coordinator
 		}
 	};
 	interactionData = Object.assign( {}, interactionData, enrollmentDetails );
 
-	mw.eventLog.submitInteraction( STREAM_NAME, SCHEMA_ID, action, interactionData );
+	this.metricsClient.submitInteraction( STREAM_NAME, SCHEMA_ID, action, interactionData );
 };
 
 /**
@@ -109,18 +117,19 @@ Experiment.prototype.submitInteraction = function ( action, interactionData ) {
 };
 
 /**
- * Gets whether the assigned group for the current user in this experiment is one of the given
- * groups.
+ * Gets whether the group assigned to the current user is one of the given groups.
  *
- * @param {...any} groups
+ * @see Experiment#getAssignedGroup
+ *
  * @example
- * const e = mw.xLab.getExperiment( 'my-awesome-experiment-1' );
+ * const e = mw.xLab.getExperiment( 'my-awesome-experiment' );
  *
- * // Is the current user assigned A or B for the My Awesome Experiment 1 experiment?
+ * // Is the current user assigned A or B for the "My Awesome Experiment" experiment?
  * if ( e.isAssignedGroup( 'A', 'B' ) {
  *   // ...
  * }
  *
+ * @param {...string} groups
  * @return {boolean}
  */
 Experiment.prototype.isAssignedGroup = function ( ...groups ) {

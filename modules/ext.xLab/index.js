@@ -1,37 +1,50 @@
 'use strict';
 
-const COOKIE_NAME = 'mpo';
-const c = mw.config.get.bind( mw.config );
 const Experiment = require( './Experiment.js' );
 
-/**
- * @typedef {Object} Config
- * @property {boolean} MetricsPlatformEnableExperimentOverrides
- * @ignore
- */
+const COOKIE_NAME = 'mpo';
 
 /**
- * @type {Config}
+ * @type {Object}
+ * @property {boolean} MetricsPlatformEnableExperimentOverrides
+ * @property {string} MetricsPlatformExperimentEventIntakeServiceUrl
  * @ignore
  */
 const config = require( './config.json' );
 
+const { newMetricsClient, DefaultEventSubmitter } = require( 'ext.eventLogging.metricsPlatform' );
+const metricsClient = newMetricsClient( new DefaultEventSubmitter(
+	config.MetricsPlatformExperimentEventIntakeServiceUrl
+) );
+
 /**
- * Gets the experiment enrollment details for the experiment whose name is passed
- * as a parameter
- * This experiment enrollment will contain the name of the experiment and the group
- * the user has been assigned to (this value will be null in the case either the
- * experiment doesn't exist or the user is not in sampled for that experiment)
- * The assigned group will be also `null` when `MetricsPlatformEnableExperiments`
- * is falsy
+ * Gets an {@link mw.xLab.Experiment} instance that encapsulates the result of enrolling the current
+ * user into the experiment. You can use that instance to get which group the user was assigned
+ * when they were enrolled into the experiment and send experiment-related analytics events.
+ *
+ * @example
+ * const e = mw.xLab.getExperiment( 'my-awesome-experiment' );
+ * const myAwesomeDialog = require( 'my.awesome.dialog' );
+ *
+ * [
+ *   'open',
+ *   'default-action',
+ *   'primary-action'
+ * ].forEach( ( event ) => {
+ *   myAwesomeDialog.on( event, () => e.send( event ) );
+ * } );
+ *
+ * // Was the current user assigned to the treatment group?
+ * if ( e.isAssignedGroup( 'treatment' ) ) {
+ *   myAwesomeDialog.primaryAction.label = 'Awesome!';
+ * }
  *
  * @param {string} experimentName The experiment name
- * @return {Experiment} The experiment enrollment details for the experiment whose
- * name has been passed as a parameter
- * @memberOf mw.xLab
+ * @return {Experiment}
+ * @memberof mw.xLab
  */
 function getExperiment( experimentName ) {
-	const userExperiments = c( 'wgMetricsPlatformUserExperiments' );
+	const userExperiments = mw.config.get( 'wgMetricsPlatformUserExperiments' );
 	let assignedGroup = null;
 	let subjectId;
 	let samplingUnit;
@@ -42,9 +55,7 @@ function getExperiment( experimentName ) {
 		userExperiments.assigned[ experimentName ]
 	) {
 		assignedGroup = userExperiments.assigned[ experimentName ];
-
 		samplingUnit = userExperiments.sampling_units[ experimentName ];
-
 		subjectId = samplingUnit === 'mw-user' ?
 			userExperiments.subject_ids[ experimentName ] :
 			'awaiting';
@@ -56,7 +67,14 @@ function getExperiment( experimentName ) {
 
 	// When the experiment doesn't exist, only `experimentName` will be set properly. The rest of
 	// its attributes will be `null`
-	return new Experiment( experimentName, assignedGroup, subjectId, samplingUnit, coordinator );
+	return new Experiment(
+		metricsClient,
+		experimentName,
+		assignedGroup,
+		subjectId,
+		samplingUnit,
+		coordinator
+	);
 }
 
 function setCookieAndReload( value ) {
@@ -70,11 +88,14 @@ function setCookieAndReload( value ) {
 }
 
 /**
- * Overrides an experiment enrollment and reloads the current URL.
+ * Overrides an experiment enrolment and reloads the page.
+ *
+ * Note well that this method is only available when `$wgMetricsPlatformEnableExperimentOverrides`
+ * is truthy.
  *
  * @param {string} experimentName The name of the experiment
  * @param {string} groupName The assigned group that will override the assigned one
- * @memberOf mw.xLab
+ * @memberof mw.xLab
  */
 function overrideExperimentGroup(
 	experimentName,
@@ -99,10 +120,13 @@ function overrideExperimentGroup(
 }
 
 /**
- * Clears enrollment overrides for a specific experiment and reloads the current URL.
+ * Clears all enrolment overrides for the experiment and reloads the page.
  *
- * @param {string} experimentName Name of the experiment whose enrollment will be cleared
- * @memberOf mw.xLab
+ * Note well that this method is only available when `$wgMetricsPlatformEnableExperimentOverrides`
+ * is truthy.
+ *
+ * @param {string} experimentName
+ * @memberof mw.xLab
  */
 function clearExperimentOverride( experimentName ) {
 	const rawOverrides = mw.cookie.get( COOKIE_NAME, null, '' );
@@ -115,9 +139,12 @@ function clearExperimentOverride( experimentName ) {
 }
 
 /**
- * Clears all experiment enrollment overrides and reloads the current URL.
+ * Clears all experiment enrolment overrides for all experiments and reloads the page.
  *
- * @memberOf mw.xLab
+ * Note well that this method is only available when `$wgMetricsPlatformEnableExperimentOverrides`
+ * is truthy.
+ *
+ * @memberof mw.xLab
  */
 function clearExperimentOverrides() {
 	setCookieAndReload( null );
