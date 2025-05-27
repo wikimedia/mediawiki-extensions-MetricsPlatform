@@ -80,10 +80,7 @@
 				"Experiment.js",
 				{
 					"name": "config.json",
-					"config": [
-						"MetricsPlatformEnableExperimentOverrides",
-						"MetricsPlatformExperimentEventIntakeServiceUrl"
-					]
+					"callback": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\ResourceLoader\\Hooks::getConfigForXLabModule"
 				}
 			],
 			"dependencies": [

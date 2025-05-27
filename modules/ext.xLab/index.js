@@ -6,16 +6,19 @@ const COOKIE_NAME = 'mpo';
 
 /**
  * @type {Object}
- * @property {boolean} MetricsPlatformEnableExperimentOverrides
- * @property {string} MetricsPlatformExperimentEventIntakeServiceUrl
+ * @property {boolean} EnableExperimentOverrides
+ * @property {string} ExperimentEventIntakeServiceUrl
+ * @property {Object|false} streamConfigs
  * @ignore
  */
 const config = require( './config.json' );
 
 const { newMetricsClient, DefaultEventSubmitter } = require( 'ext.eventLogging.metricsPlatform' );
-const metricsClient = newMetricsClient( new DefaultEventSubmitter(
-	config.MetricsPlatformExperimentEventIntakeServiceUrl
-) );
+
+const eventSubmitter = new DefaultEventSubmitter(
+	config.ExperimentEventIntakeServiceUrl
+);
+const metricsClient = newMetricsClient( config.streamConfigs, eventSubmitter );
 
 /**
  * Gets an {@link mw.xLab.Experiment} instance that encapsulates the result of enrolling the current
@@ -158,7 +161,7 @@ mw.xLab = {
 };
 
 // JS overriding experimentation feature
-if ( config.MetricsPlatformEnableExperimentOverrides || window.QUnit ) {
+if ( config.EnableExperimentOverrides || window.QUnit ) {
 	mw.xLab.overrideExperimentGroup = overrideExperimentGroup;
 	mw.xLab.clearExperimentOverride = clearExperimentOverride;
 	mw.xLab.clearExperimentOverrides = clearExperimentOverrides;
