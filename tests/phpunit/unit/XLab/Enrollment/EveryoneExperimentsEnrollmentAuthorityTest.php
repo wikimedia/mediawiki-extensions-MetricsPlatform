@@ -37,7 +37,7 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->method( 'addExperiment' );
 
 		$this->result->expects( $this->never() )
-			->method( 'addEnrollment' );
+			->method( 'addAssignment' );
 
 		$this->logger->expects( $this->never() )
 			->method( 'error' );
@@ -51,8 +51,12 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->willReturn( 'foo=bar;' );
 
 		$this->result->expects( $this->once() )
-			->method( 'addEnrollment' )
-			->with( 'foo', 'bar', 'awaiting', 'edge-unique' );
+			->method( 'addExperiment' )
+			->with( 'foo', 'awaiting', 'edge-unique' );
+
+		$this->result->expects( $this->once() )
+			->method( 'addAssignment' )
+			->with( 'foo', 'bar' );
 
 		$this->logger->expects( $this->never() )
 			->method( 'error' );
@@ -76,14 +80,14 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->willReturnCallback( function ( ...$parameters ) use ( $addExperimentInvokedCount ) {
 				if ( $addExperimentInvokedCount->getInvocationCount() === 1 ) {
 					$this->assertSame(
-						[ 'foo' ],
+						[ 'foo', 'awaiting', 'edge-unique' ],
 						$parameters
 					);
 				}
 
 				if ( $addExperimentInvokedCount->getInvocationCount() === 2 ) {
 					$this->assertSame(
-						[ 'qux' ],
+						[ 'qux', 'awaiting', 'edge-unique' ],
 						$parameters
 					);
 				}
@@ -92,18 +96,18 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 		$addEnrollmentInvokedCount = $this->exactly( 2 );
 
 		$this->result->expects( $addEnrollmentInvokedCount )
-			->method( 'addEnrollment' )
+			->method( 'addAssignment' )
 			->willReturnCallback( function ( ...$parameters ) use ( $addEnrollmentInvokedCount ) {
 				if ( $addEnrollmentInvokedCount->getInvocationCount() === 1 ) {
 					$this->assertSame(
-						[ 'foo', 'bar', 'awaiting', 'edge-unique' ],
+						[ 'foo', 'bar', false ],
 						$parameters
 					);
 				}
 
 				if ( $addEnrollmentInvokedCount->getInvocationCount() === 2 ) {
 					$this->assertSame(
-						[ 'qux', 'quux', 'awaiting', 'edge-unique' ],
+						[ 'qux', 'quux', false ],
 						$parameters
 					);
 				}
@@ -124,7 +128,7 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->method( 'addExperiment' );
 
 		$this->result->expects( $this->never() )
-			->method( 'addEnrollment' );
+			->method( 'addAssignment' );
 
 		$this->logger->expects( $this->once() )
 			->method( 'error' )

@@ -21,7 +21,7 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 		parent::setUp();
 
 		$this->request = $this->createMock( EnrollmentRequest::class );
-		$this->result = $this->createMock( EnrollmentResultBuilder::class );
+		$this->result = new EnrollmentResultBuilder();
 
 		$options = new ServiceOptions(
 			OverridesEnrollmentAuthority::CONSTRUCTOR_OPTIONS,
@@ -41,10 +41,9 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->method( 'getRawEnrollmentOverridesFromQuery' )
 			->willReturn( '' );
 
-		$this->result->expects( $this->never() )
-			->method( 'addOverride' );
-
 		$this->authority->enrollUser( $this->request, $this->result );
+
+		$this->assertEquals( new EnrollmentResultBuilder(), $this->result );
 	}
 
 	/**
@@ -63,49 +62,44 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->method( 'getRawEnrollmentOverridesFromQuery' )
 			->willReturn( $rawQuery );
 
-		$addOverrideInvokedCount = $this->exactly( count( $expectedOverrides ) );
+		$expectedResult = new EnrollmentResultBuilder();
 
-		$this->result->expects( $addOverrideInvokedCount )
-			->method( 'addOverride' )
-			->willReturnCallback( function ( ...$parameters ) use ( $addOverrideInvokedCount, $expectedOverrides ) {
-				$index = $addOverrideInvokedCount->getInvocationCount() - 1;
-
-				$this->assertSame( $expectedOverrides[$index], $parameters );
-			} );
+		foreach ( $expectedOverrides as $experimentName => $groupName ) {
+			$expectedResult->addExperiment( $experimentName, 'overridden', 'mw-user' );
+			$expectedResult->addAssignment( $experimentName, $groupName, true );
+		}
 
 		$this->authority->enrollUser( $this->request, $this->result );
+
+		$this->assertEquals( $expectedResult, $this->result );
 	}
 
 	public static function provideCookieAndQuery(): Generator {
 		yield [
 			'foo:bar',
 			'',
-			[
-				[ 'foo', 'bar' ],
-			]
+			[ 'foo' => 'bar' ],
 		];
 		yield [
 			'',
 			'qux:quux',
-			[
-				[ 'qux', 'quux' ],
-			]
+			[ 'qux' => 'quux' ],
 		];
 		yield [
 			'foo:bar',
 			'qux:quux',
 			[
-				[ 'foo', 'bar' ],
-				[ 'qux', 'quux' ],
+				'foo' => 'bar',
+				'qux' => 'quux',
 			],
 		];
 		yield [
 			'foo:bar;qux:quux',
 			'',
 			[
-				[ 'foo', 'bar' ],
-				[ 'qux', 'quux' ],
-			]
+				'foo' => 'bar',
+				'qux' => 'quux',
+			],
 		];
 	}
 
@@ -116,9 +110,6 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 		$this->request->expects( $this->never() )
 			->method( 'getRawEnrollmentOverridesFromQuery' );
 
-		$this->result->expects( $this->never() )
-			->method( 'addOverride' );
-
 		$options = new ServiceOptions(
 			OverridesEnrollmentAuthority::CONSTRUCTOR_OPTIONS,
 			[
@@ -127,5 +118,7 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 		);
 		$authority = new OverridesEnrollmentAuthority( $options );
 		$authority->enrollUser( $this->request, $this->result );
+
+		$this->assertEquals( new EnrollmentResultBuilder(), $this->result );
 	}
 }

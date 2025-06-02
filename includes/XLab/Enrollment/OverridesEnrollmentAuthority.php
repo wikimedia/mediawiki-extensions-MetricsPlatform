@@ -10,7 +10,7 @@ use MediaWiki\Config\ServiceOptions;
  * Prior to launch, a feature should be tested at every stage of the feature development cycle. A
  * developer needs to test the feature before she requests review and a QTE needs to test the
  * feature before they sign it off. We could ask them to sign up for users until they are enrolled
- * into an experiment and assigned the desired group or we could provide them a mechanism to
+ * into an experiment and assigned the desired group, or we could provide them a mechanism to
  * override experiment enrollments.
  *
  * `OverridesEnrollmentAuthority` parses a cookie and/or a query parameter and adds overrides to
@@ -24,6 +24,13 @@ class OverridesEnrollmentAuthority implements EnrollmentAuthorityInterface {
 	public const CONSTRUCTOR_OPTIONS = [
 		'MetricsPlatformEnableExperimentOverrides',
 	];
+
+	private const SUBJECT_ID = 'overridden';
+
+	// NOTE: This should probably be something like "overridden" but this value will be used to initialize the
+	// experiment.sampling_unit[ experiment_name ] property, which can only be "mw-user", "edge-unique", or "session".
+	// See https://gitlab.wikimedia.org/repos/data-engineering/schemas-event-secondary/-/blob/fe40babf56f916e2072768b25fca5a2d4b5afb80/jsonschema/fragment/analytics/product_metrics/experiment/current.yaml#L32
+	private const SAMPLING_UNIT = 'mw-user';
 
 	private bool $isEnabled;
 
@@ -48,7 +55,8 @@ class OverridesEnrollmentAuthority implements EnrollmentAuthorityInterface {
 		);
 
 		foreach ( $assignments as $experimentName => $groupName ) {
-			$result->addOverride( $experimentName, $groupName );
+			$result->addExperiment( $experimentName, self::SUBJECT_ID, self::SAMPLING_UNIT );
+			$result->addAssignment( $experimentName, $groupName, true );
 		}
 	}
 

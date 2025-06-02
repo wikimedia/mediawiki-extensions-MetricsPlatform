@@ -45,6 +45,7 @@ class HooksTest
 
 		$this->overrideConfigValues( [
 			'MetricsPlatformEnableExperiments' => true,
+			'MetricsPlatformEnableExperimentOverrides' => true,
 			'MetricsPlatformEnableExperimentConfigsFetching' => true,
 			'MetricsPlatformEnableStreamConfigsFetching' => false,
 			'MetricsPlatformEnableStreamConfigsMerging' => false,
@@ -66,9 +67,16 @@ class HooksTest
     	  			"default": 1
      			},
      			"groups": [ "control", "group-other-thing" ]
+			},
+			{
+    			"name": "logged-in-experiment-3",
+                "status": 1,
+    			"sample_rate": {
+    	  			"default": 0
+     			},
+     			"groups": [ "control", "group-another-thing" ]
 			}
-		]'
-		) );
+		]' ) );
 
 		// CentralIdLookup service
 		$this->centralIdLookup = $this->createMock( CentralIdLookup::class );
@@ -171,7 +179,8 @@ class HooksTest
 				'experiment_1',
 				'experiment_2',
 				'logged-in-experiment-1',
-				'logged-in-experiment-2'
+				'logged-in-experiment-2',
+				'logged-in-experiment-3',
 			],
 			'enrolled' => [
 				'experiment_1',
@@ -190,12 +199,14 @@ class HooksTest
 				'experiment_2' => 'awaiting',
 				'logged-in-experiment-1' => '9b6a4e7d98cd96a463fbcadb9e9edfdd9e4b5d9560c79b9d16b38599cb23128e',
 				'logged-in-experiment-2' => '94d25f0b2bd16c79bad41a0b9713a604e6b709ffe30124f5bb68bcae9d57ba38',
+				'logged-in-experiment-3' => '9f3697ea12180be2fefaf5463333f539374a667f16037768e67fe0cb7e5b622e',
 			],
 			'sampling_units' => [
 				'experiment_1' => 'edge-unique',
 				'experiment_2' => 'edge-unique',
 				'logged-in-experiment-1' => 'mw-user',
-				'logged-in-experiment-2' => 'mw-user'
+				'logged-in-experiment-2' => 'mw-user',
+				'logged-in-experiment-3' => 'mw-user',
 			],
 			'overrides' => []
 		];
@@ -245,6 +256,61 @@ class HooksTest
 			$this->onBeforeInitialize(),
 			'X-Experiment-Enrollments header is not present so there are no enrollments for everyone experiments'
 		);
+	}
+
+	/**
+	 * Tests the user setting an override for an out-sample for a logged-in experiment.
+	 */
+	public function testOverriddenOutSampleLoggedInExperiment(): void {
+		// The user is registered (they have a local ID > 0) and they have a central user ID > 0
+		// as well.
+		$user = new User();
+		$user->setName( 'TestUser' );
+		$user->setId( 123 );
+		$this->context->setUser( $user );
+
+		$this->centralIdLookup->expects( $this->once() )
+			->method( 'centralIdFromLocalUser' )
+			->with( $user )
+			->willReturn( 321 );
+
+		$this->context->getRequest()->setCookie(
+			'mpo', 'logged-in-experiment-3:control'
+		);
+
+		$actual = $this->onBeforeInitialize();
+		$expected = [
+			'active_experiments' => [
+				'logged-in-experiment-1',
+				'logged-in-experiment-2',
+				'logged-in-experiment-3',
+			],
+			'enrolled' => [
+				'logged-in-experiment-1',
+				'logged-in-experiment-2',
+				'logged-in-experiment-3',
+			],
+			'assigned' => [
+				'logged-in-experiment-1' => 'group-something',
+				'logged-in-experiment-2' => 'group-other-thing',
+				'logged-in-experiment-3' => 'control',
+			],
+			'subject_ids' => [
+				'logged-in-experiment-1' => '9b6a4e7d98cd96a463fbcadb9e9edfdd9e4b5d9560c79b9d16b38599cb23128e',
+				'logged-in-experiment-2' => '94d25f0b2bd16c79bad41a0b9713a604e6b709ffe30124f5bb68bcae9d57ba38',
+				'logged-in-experiment-3' => 'overridden',
+			],
+			'sampling_units' => [
+				'logged-in-experiment-1' => 'mw-user',
+				'logged-in-experiment-2' => 'mw-user',
+				'logged-in-experiment-3' => 'mw-user',
+			],
+			'overrides' => [
+				'logged-in-experiment-3',
+			]
+		];
+
+		$this->assertEquals( $expected, $actual );
 	}
 
 	/**

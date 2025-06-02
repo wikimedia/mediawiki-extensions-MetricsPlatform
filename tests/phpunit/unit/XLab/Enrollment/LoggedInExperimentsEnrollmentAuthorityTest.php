@@ -50,7 +50,7 @@ class LoggedInExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->method( 'addExperiment' );
 
 		$this->result->expects( $this->never() )
-			->method( 'addEnrollment' );
+			->method( 'addAssignment' );
 
 		$this->authority->enrollUser( $this->request, $this->result );
 	}
@@ -73,16 +73,11 @@ class LoggedInExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 
 		$this->result->expects( $this->once() )
 			->method( 'addExperiment' )
-			->with( 'foo' );
+			->with( 'foo', '377195904c99497c2cdb7aaecaf541ca717f34e5357dace55ebb1711d54190c2', 'mw-user' );
 
 		$this->result->expects( $this->once() )
-			->method( 'addEnrollment' )
-			->with(
-				'foo',
-				'control',
-				'377195904c99497c2cdb7aaecaf541ca717f34e5357dace55ebb1711d54190c2',
-				'mw-user'
-			);
+			->method( 'addAssignment' )
+			->with( 'foo', 'control' );
 
 		$this->authority->enrollUser( $this->request, $this->result );
 	}
@@ -124,14 +119,22 @@ class LoggedInExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->willReturnCallback( function ( ...$parameters ) use ( $addExperimentInvokedCount ) {
 				if ( $addExperimentInvokedCount->getInvocationCount() === 1 ) {
 					$this->assertSame(
-						[ 'foo' ],
+						[
+							'foo',
+							'377195904c99497c2cdb7aaecaf541ca717f34e5357dace55ebb1711d54190c2',
+							'mw-user',
+						],
 						$parameters
 					);
 				}
 
 				if ( $addExperimentInvokedCount->getInvocationCount() === 2 ) {
 					$this->assertSame(
-						[ 'bar' ],
+						[
+							'bar',
+							'92bd577d056dc2d6fe69083f638d4ce8bf4e8e4b88b351bcb8bbdf2dcef6a437',
+							'mw-user',
+						],
 						$parameters
 					);
 				}
@@ -140,28 +143,18 @@ class LoggedInExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 		$addEnrollmentInvokedCount = $this->exactly( 2 );
 
 		$this->result->expects( $addEnrollmentInvokedCount )
-			->method( 'addEnrollment' )
+			->method( 'addAssignment' )
 			->willReturnCallback( function ( ...$parameters ) use ( $addEnrollmentInvokedCount ) {
 				if ( $addEnrollmentInvokedCount->getInvocationCount() === 1 ) {
 					$this->assertSame(
-						[
-							'foo',
-							'control',
-							'377195904c99497c2cdb7aaecaf541ca717f34e5357dace55ebb1711d54190c2',
-							'mw-user'
-						],
+						[ 'foo', 'control', false ],
 						$parameters
 					);
 				}
 
 				if ( $addEnrollmentInvokedCount->getInvocationCount() === 2 ) {
 					$this->assertSame(
-						[
-							'bar',
-							'treatment',
-							'92bd577d056dc2d6fe69083f638d4ce8bf4e8e4b88b351bcb8bbdf2dcef6a437',
-							'mw-user'
-						],
+						[ 'bar', 'treatment', false ],
 						$parameters
 					);
 				}
