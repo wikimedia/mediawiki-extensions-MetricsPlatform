@@ -46,7 +46,7 @@
 		},
 		"MetricsPlatformExperimentEventIntakeServiceUrl": {
 			"description": "The URL of the EventGate experiment-related event intake service.",
-			"value": "http://localhost:8080/v1/events?hasty=true"
+			"value": "http://localhost:8192/v1/events?hasty=true"
 		}
 	},
 	"HookHandlers": {
