@@ -2,7 +2,7 @@ const SCHEMA_ID = '/analytics/product_metrics/web/base/1.4.2';
 const STREAM_NAME = 'product_metrics.web_base';
 
 /**
- * @constructor
+ * @class
  * @classdesc This class represents an experiment enrolment for the current user. You can use it to
  *  get which group the user was assigned when they were enrolled into the experiment and send
  *  experiment-related analytics events.
@@ -10,8 +10,9 @@ const STREAM_NAME = 'product_metrics.web_base';
  *  Note well that this class should be constructed using `mw.xLab.getExperiment()` instead, e.g.
  *
  *  ```
- * const experiment = mw.xLab.getExperiment( 'my-awesome-experiment' );
- * ```
+ *  const experiment = mw.xLab.getExperiment( 'my-awesome-experiment' );
+ *  ```
+ * @hideconstructor
  *
  * @package
  *
@@ -39,6 +40,9 @@ function Experiment(
 	this.subjectId = subjectId;
 	this.samplingUnit = samplingUnit;
 	this.coordinator = coordinator;
+	this.streamName = STREAM_NAME;
+	this.schemaID = SCHEMA_ID;
+
 }
 
 /**
@@ -67,6 +71,11 @@ Experiment.prototype.getAssignedGroup = function () {
  * data and sent. The experiment-related data are specified and documented in
  * [the `fragment/analytics/product_metrics/experiment` schema fragment][0].
  *
+ * By default, the analytics event will be sent to the `product_metrics.web_base` stream and be
+ * validated with the `/analytics/product_metrics/web/base/1.4.2` schema. The stream and schema
+ * can be overridden with {@link Experiment#setStream} and {@link Experiment#setSchema},
+ * respectively.
+ *
  * [0]: https://gitlab.wikimedia.org/repos/data-engineering/schemas-event-secondary/-/blob/master/jsonschema/fragment/analytics/product_metrics/experiment/current.yaml?ref_type=heads
  *
  * @see mw.eventLog.submitInteraction
@@ -93,11 +102,11 @@ Experiment.prototype.send = function ( action, interactionData ) {
 	};
 	interactionData = Object.assign( {}, interactionData, enrollmentDetails );
 
-	this.metricsClient.submitInteraction( STREAM_NAME, SCHEMA_ID, action, interactionData );
+	this.metricsClient.submitInteraction( this.streamName, this.schemaID, action, interactionData );
 };
 
 /**
- * Submits an event related to this experiment
+ * Submits an event related to this experiment.
  *
  * This method makes `Experiment` compatible with [the click-through rate implementation in the
  * `ext.wikimediaEvents.xLab` ResourceLoader module][0] by proxying to {@link Experiment#send}.
@@ -134,6 +143,34 @@ Experiment.prototype.submitInteraction = function ( action, interactionData ) {
  */
 Experiment.prototype.isAssignedGroup = function ( ...groups ) {
 	return groups.includes( this.assignedGroup );
+};
+
+/**
+ * Sets the stream to send analytics events to with {@link Experiment#send}.
+ *
+ * This method is chainable.
+ *
+ * @param {string} streamName
+ * @return {Experiment} The instance on which this method was called
+ */
+Experiment.prototype.setStream = function ( streamName ) {
+	this.streamName = streamName;
+
+	return this;
+};
+
+/**
+ * Sets the ID of the schema used to validate analytics events sent with {@link Experiment#send}.
+ *
+ * This method is chainable.
+ *
+ * @param {string} schemaID
+ * @return {Experiment}
+ */
+Experiment.prototype.setSchema = function ( schemaID ) {
+	this.schemaID = schemaID;
+
+	return this;
 };
 
 module.exports = Experiment;

@@ -105,3 +105,25 @@ QUnit.test( 'send() - overrides experiment field', function ( assert ) {
 		}
 	] );
 } );
+
+QUnit.test( 'send() - overriding stream and schema', function ( assert ) {
+	this.everyoneExperiment.setStream( 'my_awesome_stream' )
+		.setSchema( '/my/awesome/schema/0.0.1' )
+		.send( 'Hello, World!' );
+
+	assert.strictEqual( this.metricsClient.submitInteraction.called, true );
+	assert.deepEqual( this.metricsClient.submitInteraction.firstCall.args, [
+		'my_awesome_stream',
+		'/my/awesome/schema/0.0.1',
+		'Hello, World!',
+		{
+			experiment: {
+				enrolled: 'hello_world',
+				assigned: 'A',
+				subject_id: 'awaiting',
+				sampling_unit: 'edge-unique',
+				coordinator: 'xLab'
+			}
+		}
+	] );
+} );
