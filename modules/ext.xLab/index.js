@@ -18,7 +18,9 @@ const { newMetricsClient, DefaultEventSubmitter } = require( 'ext.eventLogging.m
 const eventSubmitter = new DefaultEventSubmitter(
 	config.ExperimentEventIntakeServiceUrl
 );
-const metricsClient = newMetricsClient( config.streamConfigs, eventSubmitter );
+const everyoneExperimentMetricsClient = newMetricsClient( config.streamConfigs, eventSubmitter );
+
+const loggedInExperimentMetricsClient = newMetricsClient( config.streamConfigs, new DefaultEventSubmitter() );
 
 /**
  * Gets an {@link mw.xLab.Experiment} instance that encapsulates the result of enrolling the current
@@ -48,28 +50,33 @@ const metricsClient = newMetricsClient( config.streamConfigs, eventSubmitter );
  */
 function getExperiment( experimentName ) {
 	const userExperiments = mw.config.get( 'wgMetricsPlatformUserExperiments' );
-	let assignedGroup = null;
-	let subjectId;
-	let samplingUnit;
-	let coordinator;
 
-	if (
-		userExperiments &&
-		userExperiments.assigned[ experimentName ]
-	) {
-		assignedGroup = userExperiments.assigned[ experimentName ];
-		samplingUnit = userExperiments.sampling_units[ experimentName ];
-		subjectId = samplingUnit === 'mw-user' ?
-			userExperiments.subject_ids[ experimentName ] :
-			'awaiting';
-		coordinator = userExperiments.overrides.includes( experimentName ) ? 'forced' : 'xLab';
-	} else {
+	if ( !userExperiments || !userExperiments.assigned[ experimentName ] ) {
 		mw.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
 			'Is the experiment configured and running?' );
+		return new Experiment( everyoneExperimentMetricsClient, experimentName, null, null, null, null );
 	}
 
-	// When the experiment doesn't exist, only `experimentName` will be set properly. The rest of
-	// its attributes will be `null`
+	const assignedGroup = userExperiments.assigned[ experimentName ];
+	const samplingUnit = userExperiments.sampling_units[ experimentName ];
+	const subjectId = samplingUnit === 'mw-user' ?
+		userExperiments.subject_ids[ experimentName ] :
+		'awaiting';
+	const coordinator = userExperiments.overrides.includes( experimentName ) ?
+		'forced' :
+		'xLab';
+
+	/*
+	  Provide an alternate MetricsClient for logged-in experiments to override the
+	  eventIntakeServiceUrl set by config (wgMetricsPlatformExperimentEventIntakeServiceUrl
+	  = '/evt-103e/v2/events?hasty=true' on production) which drops events if everyone experiment
+	  enrollments are not included. DefaultEventSubmitter sets DEFAULT_EVENT_INTAKE_URL to the
+	  eventgate-analytics-external cluster. See https://phabricator.wikimedia.org/T395779.
+	*/
+	const metricsClient = samplingUnit === 'mw-user' ?
+		loggedInExperimentMetricsClient :
+		everyoneExperimentMetricsClient;
+
 	return new Experiment(
 		metricsClient,
 		experimentName,
