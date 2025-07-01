@@ -14,25 +14,19 @@ class EnrollmentResultBuilder {
 	private array $subjectIDs = [];
 	private array $samplingUnits = [];
 
-	public function addExperiment( string $experimentName ): void {
-		$this->activeExperiments[] = $experimentName;
-	}
-
-	public function addEnrollment(
-		string $experimentName,
-		string $groupName,
-		string $subjectID,
-		string $samplingUnit
-	): void {
-		$this->enrolled[] = $experimentName;
-		$this->assigned[ $experimentName ] = $groupName;
+	public function addExperiment( string $experimentName, string $subjectID, string $samplingUnit ): void {
+		$this->activeExperiments[ $experimentName ] = true;
 		$this->subjectIDs[ $experimentName ] = $subjectID;
 		$this->samplingUnits[ $experimentName ] = $samplingUnit;
 	}
 
-	public function addOverride( string $experimentName, string $groupName ): void {
-		$this->overrides[] = $experimentName;
+	public function addAssignment( string $experimentName, string $groupName, bool $isOverride = false ): void {
+		$this->enrolled[ $experimentName ] = true;
 		$this->assigned[ $experimentName ] = $groupName;
+
+		if ( $isOverride ) {
+			$this->overrides[ $experimentName ] = true;
+		}
 	}
 
 	/**
@@ -43,9 +37,9 @@ class EnrollmentResultBuilder {
 	 */
 	public function build(): array {
 		return [
-			'active_experiments' => $this->activeExperiments,
-			'overrides' => $this->overrides,
-			'enrolled' => $this->enrolled,
+			'active_experiments' => array_keys( $this->activeExperiments ),
+			'overrides' => array_keys( $this->overrides ),
+			'enrolled' => array_keys( $this->enrolled ),
 			'assigned' => $this->assigned,
 			'subject_ids' => $this->subjectIDs,
 			'sampling_units' => $this->samplingUnits,

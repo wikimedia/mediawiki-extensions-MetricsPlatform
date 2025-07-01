@@ -31,8 +31,9 @@ class LoggedInExperimentsEnrollmentAuthority implements EnrollmentAuthorityInter
 
 		foreach ( $request->getActiveLoggedInExperiments() as $experiment ) {
 			$experimentName = $experiment['name'];
+			$subjectID = $this->userSplitterInstrumentation->getSubjectId( $centralUserID, $experimentName );
 
-			$result->addExperiment( $experimentName );
+			$result->addExperiment( $experimentName, $subjectID, self::SAMPLING_UNIT );
 
 			$groups = $experiment['groups'];
 			$userHash = $this->userSplitterInstrumentation->getUserHash( $centralUserID, $experimentName );
@@ -45,11 +46,9 @@ class LoggedInExperimentsEnrollmentAuthority implements EnrollmentAuthorityInter
 			);
 
 			if ( $isInSample ) {
-				$result->addEnrollment(
+				$result->addAssignment(
 					$experimentName,
-					$this->userSplitterInstrumentation->getBucket( $groups, $userHash ),
-					$this->userSplitterInstrumentation->getSubjectId( $centralUserID, $experimentName ),
-					self::SAMPLING_UNIT
+					$this->userSplitterInstrumentation->getBucket( $groups, $userHash )
 				);
 			}
 		}

@@ -27,21 +27,17 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 
 		$enrollmentResult = new EnrollmentResultBuilder();
 
-		$enrollmentResult->addExperiment( 'main-course' );
-		$enrollmentResult->addEnrollment(
-			'main-course',
-			'treatment',
-			'asiwyfa',
-			'mw-user'
-		);
-		$enrollmentResult->addOverride( 'main-course', 'control' );
+		$enrollmentResult->addExperiment( 'main-course', 'overridden', 'mw-user' );
+		$enrollmentResult->addAssignment( 'main-course', 'control', true );
 
-		$enrollmentResult->addExperiment( 'dessert' );
-		$enrollmentResult->addEnrollment(
+		$enrollmentResult->addExperiment(
 			'dessert',
-			'control',
 			'603c456f34744aac87bf1f086eb46e8f9f0ba7330f5f72c38e3f8031ccd95397',
 			'mw-user'
+		);
+		$enrollmentResult->addAssignment(
+			'dessert',
+			'control'
 		);
 
 		$this->experimentManager->initialize( $enrollmentResult->build() );
@@ -52,12 +48,10 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 		$this->expectExceptionMessage( 'ExperimentManager has already been initialized.' );
 
 		$enrollmentResult = new EnrollmentResultBuilder();
-		$enrollmentResult->addExperiment( 'my-awesome-experiment' );
-		$enrollmentResult->addEnrollment(
+		$enrollmentResult->addExperiment( 'my-awesome-experiment', 'asiwyfa', 'mw-user' );
+		$enrollmentResult->addAssignment(
 			'my-awesome-experiment',
-			'treatment',
-			'asiwyfa',
-			'mw-user'
+			'treatment'
 		);
 
 		$this->experimentManager->initialize( $enrollmentResult->build() );
@@ -85,7 +79,7 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 			[
 				'enrolled' => 'main-course',
 				'assigned' => 'control',
-				'subject_id' => 'asiwyfa',
+				'subject_id' => 'overridden',
 				'sampling_unit' => 'mw-user',
 				'coordinator' => 'forced'
 			]
