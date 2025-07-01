@@ -21,7 +21,13 @@ class Hooks {
 	public static function getConfigForXLabModule( RL\Context $context, Config $config ): array {
 		return [
 			'EnableExperimentOverrides' => $config->get( 'MetricsPlatformEnableExperimentOverrides' ),
-			'ExperimentEventIntakeServiceUrl' => $config->get( 'MetricsPlatformExperimentEventIntakeServiceUrl' ),
+			'EveryoneExperimentEventIntakeServiceUrl' =>
+				$config->get( 'MetricsPlatformExperimentEventIntakeServiceUrl' ),
+
+			// NOTE: MetricsPlatform has a hard dependency on EventLogging. If this code is executing, then
+			// EventLogging is loaded and this config variable is defined.
+			'LoggedInExperimentEventIntakeServiceUrl' => $config->get( 'EventLoggingServiceUri' ),
+
 			'streamConfigs' => self::getStreamConfigs(),
 		];
 	}

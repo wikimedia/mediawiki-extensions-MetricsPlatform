@@ -7,7 +7,8 @@ const COOKIE_NAME = 'mpo';
 /**
  * @type {Object}
  * @property {boolean} EnableExperimentOverrides
- * @property {string} ExperimentEventIntakeServiceUrl
+ * @property {string} EveryoneExperimentEventIntakeServiceUrl
+ * @property {string} LoggedInExperimentEventIntakeServiceUrl
  * @property {Object|false} streamConfigs
  * @ignore
  */
@@ -15,12 +16,23 @@ const config = require( './config.json' );
 
 const { newMetricsClient, DefaultEventSubmitter } = require( 'ext.eventLogging.metricsPlatform' );
 
-const eventSubmitter = new DefaultEventSubmitter(
-	config.ExperimentEventIntakeServiceUrl
-);
-const everyoneExperimentMetricsClient = newMetricsClient( config.streamConfigs, eventSubmitter );
+/**
+ * @param {string} intakeServiceUrl
+ * @ignore
+ */
+function newMetricsClientInternal( intakeServiceUrl ) {
+	return newMetricsClient(
+		config.streamConfigs,
+		new DefaultEventSubmitter( intakeServiceUrl )
+	);
+}
 
-const loggedInExperimentMetricsClient = newMetricsClient( config.streamConfigs, new DefaultEventSubmitter() );
+const everyoneExperimentMetricsClient =
+	newMetricsClientInternal( config.EveryoneExperimentEventIntakeServiceUrl );
+
+const loggedInExperimentMetricsClient = newMetricsClientInternal(
+	config.LoggedInExperimentEventIntakeServiceUrl
+);
 
 /**
  * Gets an {@link mw.xLab.Experiment} instance that encapsulates the result of enrolling the current
@@ -54,7 +66,14 @@ function getExperiment( experimentName ) {
 	if ( !userExperiments || !userExperiments.assigned[ experimentName ] ) {
 		mw.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
 			'Is the experiment configured and running?' );
-		return new Experiment( everyoneExperimentMetricsClient, experimentName, null, null, null, null );
+		return new Experiment(
+			everyoneExperimentMetricsClient,
+			experimentName,
+			null,
+			null,
+			null,
+			null
+		);
 	}
 
 	const assignedGroup = userExperiments.assigned[ experimentName ];
