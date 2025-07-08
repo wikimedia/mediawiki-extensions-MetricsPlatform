@@ -25,7 +25,7 @@
 			"value": "http://localhost:80"
 		},
 		"MetricsPlatformEnableStreamConfigsFetching": {
-			"description": "Enable fetching instrumentation configs from XLab.",
+			"description": "Enable fetching instrumentation configs from XLab during the request. WARNING: This will degrade performance for logged-in users.",
 			"value": false
 		},
 		"MetricsPlatformEnableStreamConfigsMerging": {
@@ -41,7 +41,7 @@
 			"value": false
 		},
 		"MetricsPlatformEnableExperimentConfigsFetching": {
-			"description": "Enable fetching experiment configs from XLab if no experiments are defined in $wgMetricsPlatformExperiments.",
+			"description": "Enable fetching experiment configs from XLab during the request if no experiments are defined in $wgMetricsPlatformExperiments. WARNING: This will degrade performance for logged-in users.",
 			"value": false
 		},
 		"MetricsPlatformExperimentEventIntakeServiceUrl": {
