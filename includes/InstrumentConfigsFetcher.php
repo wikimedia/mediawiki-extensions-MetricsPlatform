@@ -16,6 +16,7 @@ class InstrumentConfigsFetcher {
 	private const HTTP_TIMEOUT = 1;
 	private const INSTRUMENT = 1;
 	private const EXPERIMENT = 2;
+	private const USER_AGENT = 'InstrumentConfigsFetcher/0.0.1 (#experiment-platform)';
 	public const XLAB_API_INSTRUMENTS_ENDPOINT = "/api/v1/instruments";
 	public const XLAB_API_EXPERIMENTS_ENDPOINT = "/api/v1/experiments?format=config&authority=mediawiki";
 
@@ -89,6 +90,14 @@ class InstrumentConfigsFetcher {
 				$baseUrl = $config->get( 'MetricsPlatformInstrumentConfiguratorBaseUrl' );
 				$url = $baseUrl . $endpoint;
 				$request = $this->httpRequestFactory->create( $url, [ 'timeout' => self::HTTP_TIMEOUT ], $fname );
+
+				// T398957: Identify the agent fetching the configs in the similar way to the configs fetchers running
+				// on the cache-proxy nodes.
+				//
+				// See https://gerrit.wikimedia.org/r/plugins/gitiles/operations/puppet/+/refs/heads/production/modules/profile/files/cache/wmfuniq_experiment_fetcher.py#52
+				$request->setHeader( 'User-Agent', self::USER_AGENT );
+				$request->setHeader( 'X-Experiment-Config-Poller', wfHostname() );
+
 				$status = $request->execute();
 				$labels = [];
 				if ( $status->isOK() ) {
