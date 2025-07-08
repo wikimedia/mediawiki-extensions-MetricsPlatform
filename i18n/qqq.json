@@ -7,5 +7,6 @@
 		]
 	},
 	"metricsplatform-desc": "{{desc|name=MetricsPlatform|url=https://www.mediawiki.org/wiki/Extension:MetricsPlatform}}",
-	"metricsplatform-xlab-non-successful-response": "Used as an error message when fetching instrument or experiment configs from xLab."
+	"metricsplatform-xlab-non-successful-response": "Used as an error message when fetching instrument or experiment configs from xLab.",
+	"metricsplatform-xlab-api-empty-response-body": "Used as an error message when fetching instrument or experiment configs. This error message is logged when the xLab API responds successfully but the body of the response is empty."
 }

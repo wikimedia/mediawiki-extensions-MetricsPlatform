@@ -20,7 +20,7 @@ return [
 		);
 		return new InstrumentConfigsFetcher(
 			$options,
-			$services->getMainWANObjectCache(),
+			$services->getMainObjectStash(),
 			$services->getHttpRequestFactory(),
 			$services->getService( 'MetricsPlatform.Logger' ),
 			$services->getStatsFactory()->withComponent( 'MetricsPlatform' ),
