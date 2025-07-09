@@ -99,6 +99,13 @@ class InstrumentConfigsFetcher {
 				$request->setHeader( 'X-Experiment-Config-Poller', wfHostname() );
 
 				$status = $request->execute();
+
+				$responseStatusCode = $request->getStatus();
+
+				if ( !$responseStatusCode < 200 && $responseStatusCode >= 300 ) {
+					$status->fatal( 'metricsplatform-xlab-non-successful-response' );
+				}
+
 				$labels = [];
 				if ( $status->isOK() ) {
 					$labels[] = 'success';

@@ -1,8 +1,11 @@
 {
 	"@metadata": {
 		"authors": [
-			"Clare Ming"
+			"Santiago Faci",
+			"Clare Ming",
+			"Sam Smith"
 		]
 	},
-	"metricsplatform-desc": "{{desc|name=MetricsPlatform|url=https://www.mediawiki.org/wiki/Extension:MetricsPlatform}}"
+	"metricsplatform-desc": "{{desc|name=MetricsPlatform|url=https://www.mediawiki.org/wiki/Extension:MetricsPlatform}}",
+	"metricsplatform-xlab-non-successful-response": "Used as an error message when fetching instrument or experiment configs from xLab."
 }

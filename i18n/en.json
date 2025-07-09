@@ -1,8 +1,11 @@
 {
 	"@metadata": {
 		"authors": [
-			"Clare Ming"
+			"Santiago Faci",
+			"Clare Ming",
+			"Sam Smith"
 		]
 	},
-	"metricsplatform-desc": "This is the Metrics Platform extension"
+	"metricsplatform-desc": "This is the Metrics Platform extension",
+	"metricsplatform-xlab-non-successful-response": "The xLab API returned a non successful response."
 }

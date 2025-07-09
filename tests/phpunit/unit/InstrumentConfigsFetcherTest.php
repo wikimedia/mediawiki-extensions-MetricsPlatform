@@ -11,7 +11,7 @@ use MediaWiki\Status\StatusFormatter;
 use MediaWikiUnitTestCase;
 use MWHttpRequest;
 use Psr\Log\LoggerInterface;
-use StatusValue;
+use Wikimedia\Message\MessageValue;
 use Wikimedia\ObjectCache\HashBagOStuff;
 use Wikimedia\ObjectCache\WANObjectCache;
 use Wikimedia\Stats\StatsFactory;
@@ -46,7 +46,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 
 	public function testSuccess() {
 		$httpRequest = $this->getHttpRequest(
-			StatusValue::newGood( 200 ), 200, $this->instrumentConfigs['responseString'] );
+			Status::newGood( 200 ), $this->instrumentConfigs['responseString'] );
 		$this->httpRequestFactory->expects( $this->once() )
 			->method( 'create' )
 			->willReturn( $httpRequest );
@@ -74,9 +74,9 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	}
 
 	public function testFailTimeout() {
-		$status = StatusValue::newFatal( "http-timed-out", 408, 'Connection timed out' );
+		$status = Status::newFatal( "http-timed-out", 408, 'Connection timed out' );
 		$status->setResult( false, 408 );
-		$httpRequest = $this->getHttpRequest( $status, 408, "" );
+		$httpRequest = $this->getHttpRequest( $status );
 		$this->httpRequestFactory->expects( $this->once() )
 			->method( 'create' )
 			->willReturn( $httpRequest );
@@ -100,9 +100,9 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	public function testMalformedResponse() {
 		$response = $this->instrumentConfigs['responseString'];
 		$malformedResponse = str_replace( $response, '"', '\'' );
-		$status = StatusValue::newFatal( "http-timed-out", 400, 'Not Found' );
+		$status = Status::newFatal( "http-timed-out", 400, 'Not Found' );
 		$status->setResult( false, 400 );
-		$httpRequest = $this->getHttpRequest( $status, 400, $malformedResponse );
+		$httpRequest = $this->getHttpRequest( $status, $malformedResponse );
 		$this->httpRequestFactory->expects( $this->once() )
 			->method( 'create' )
 			->willReturn( $httpRequest );
@@ -121,6 +121,39 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		);
 		$result = $fetcher->getInstrumentConfigs();
 		$this->assertNotEquals( $this->instrumentConfigs['responseArray'], $result );
+	}
+
+	public function testNonSuccessfulResponse() {
+		$status = Status::newGood( 301 );
+		$httpRequest = $this->getHttpRequest( $status );
+
+		$this->httpRequestFactory->expects( $this->once() )
+			->method( 'create' )
+			->willReturn( $httpRequest );
+
+		$this->statusFormatter->expects( $this->once() )
+			->method( 'getPsr3MessageAndContext' )
+			->willReturn( [ 'metricsplatform-xlab-non-successful-response', [] ] );
+
+		$fetcher = new InstrumentConfigsFetcher(
+			$this->mockOptions(),
+			$this->WANObjectCache,
+			$this->httpRequestFactory,
+			$this->logger,
+			$this->statsFactory,
+			$this->statusFormatter
+		);
+
+		$result = $fetcher->getInstrumentConfigs();
+
+		$this->assertEquals( [], $result );
+
+		$this->assertFalse( $status->isGood() );
+		$this->assertEquals(
+			[ new MessageValue( 'metricsplatform-xlab-non-successful-response' ) ],
+			$status->getMessages( 'error' ),
+			'The "metricsplatform-xlab-non-successful-response" error was added to the status'
+		);
 	}
 
 	private function mockOptions() {
@@ -217,16 +250,16 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		];
 	}
 
-	private function getHttpRequest( $statusValue, $statusCode, $content, $headers = [] ) {
+	private function getHttpRequest( Status $status, $content = '', $headers = [] ) {
 		$httpRequest = $this->getMockBuilder( MWHttpRequest::class )
 			->disableOriginalConstructor()
 			->getMock();
 		$httpRequest->method( 'execute' )
-			->willReturn( Status::wrap( $statusValue ) );
+			->willReturn( $status );
 		$httpRequest->method( 'getResponseHeaders' )
 			->willReturn( $headers );
 		$httpRequest->method( 'getStatus' )
-			->willReturn( $statusCode );
+			->willReturn( $status->getValue() );
 		$httpRequest->method( 'getContent' )
 			->willReturn( $content );
 		return $httpRequest;
