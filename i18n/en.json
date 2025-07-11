@@ -1,9 +1,9 @@
 {
 	"@metadata": {
 		"authors": [
+			"Sam Smith",
 			"Santiago Faci",
-			"Clare Ming",
-			"Sam Smith"
+			"Clare Ming"
 		]
 	},
 	"metricsplatform-desc": "This is the Metrics Platform extension",
