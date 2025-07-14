@@ -4,5 +4,6 @@
 			"Brettchenweber"
 		]
 	},
-	"metricsplatform-desc": "Dies ist die Metrics-Plattform-Erweiterung"
+	"metricsplatform-desc": "Dies ist die Metrics-Plattform-Erweiterung",
+	"metricsplatform-xlab-non-successful-response": "Die xLab-API hat eine nicht erfolgreiche Antwort zurückgegeben."
 }

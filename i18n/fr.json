@@ -1,8 +1,10 @@
 {
 	"@metadata": {
 		"authors": [
+			"JLTRY",
 			"Mahabarata"
 		]
 	},
-	"metricsplatform-desc": "Il s'agit de l'extension Metrics Platform"
+	"metricsplatform-desc": "Il s'agit de l'extension Metrics Platform",
+	"metricsplatform-xlab-non-successful-response": "L'API xLab a renvoyé une réponse non réussie."
 }

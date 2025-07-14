@@ -1,0 +1,8 @@
+{
+	"@metadata": {
+		"authors": [
+			"JorgeElias2302"
+		]
+	},
+	"metricsplatform-xlab-non-successful-response": "La API de xLab devolvió una respuesta fallida."
+}

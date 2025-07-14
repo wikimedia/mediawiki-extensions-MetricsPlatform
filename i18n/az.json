@@ -4,5 +4,6 @@
 			"Nemoralis"
 		]
 	},
-	"metricsplatform-desc": "Bu, Metrik Platformasının genişləndirilməsidir"
+	"metricsplatform-desc": "Bu, Metrik Platformasının genişləndirilməsidir",
+	"metricsplatform-xlab-non-successful-response": "xLab API uğursuz cavab qaytardı."
 }

@@ -4,5 +4,6 @@
 			"McDutchie"
 		]
 	},
-	"metricsplatform-desc": "Isto es le extension Metrics Platform"
+	"metricsplatform-desc": "Isto es le extension Metrics Platform",
+	"metricsplatform-xlab-non-successful-response": "Le API de xLab ha restituite un responsa que indica un non-successo."
 }

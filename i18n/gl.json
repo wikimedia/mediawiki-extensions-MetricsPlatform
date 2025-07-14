@@ -4,5 +4,6 @@
 			"Toliño"
 		]
 	},
-	"metricsplatform-desc": "Esta é a extensión de métricas da plataforma"
+	"metricsplatform-desc": "Esta é a extensión de métricas da plataforma",
+	"metricsplatform-xlab-non-successful-response": "A API de xLab devolveu unha resposta non exitosa."
 }
