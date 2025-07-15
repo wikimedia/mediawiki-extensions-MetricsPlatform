@@ -4,5 +4,6 @@
 			"Bjankuloski06"
 		]
 	},
-	"metricsplatform-desc": "Ова е додатокот Подлога за мерила"
+	"metricsplatform-desc": "Ова е додатокот Подлога за мерила",
+	"metricsplatform-xlab-non-successful-response": "Приложникот xLab даде неуспешен одговор."
 }
