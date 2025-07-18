@@ -4,5 +4,6 @@
 			"JorgeElias2302"
 		]
 	},
-	"metricsplatform-xlab-non-successful-response": "La API de xLab devolvió una respuesta fallida."
+	"metricsplatform-xlab-non-successful-response": "La API de xLab devolvió una respuesta fallida.",
+	"metricsplatform-xlab-api-empty-response-body": "La API de xLab devolvió una respuesta con un cuerpo vacío."
 }
