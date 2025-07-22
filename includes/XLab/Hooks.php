@@ -54,13 +54,13 @@ class Hooks implements
 			return;
 		}
 
-		$activeExperiments = [];
-
-		if ( $this->config->has( 'MetricsPlatformExperiments' ) ) {
-			$activeExperiments = $this->config->get( 'MetricsPlatformExperiments' );
-		} elseif ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
-			$activeExperiments = $this->configsFetcher->getExperimentConfigs();
+		if ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
+			$this->configsFetcher->updateExperimentConfigs();
 		}
+
+		$activeExperiments = $this->config->has( 'MetricsPlatformExperiments' ) ?
+			$this->config->get( 'MetricsPlatformExperiments' ) :
+			$this->configsFetcher->getExperimentConfigs();
 
 		$enrollmentRequest = new EnrollmentRequest( $activeExperiments, $user, $request );
 		$result = new EnrollmentResultBuilder();

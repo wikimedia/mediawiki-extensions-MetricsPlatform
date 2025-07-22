@@ -60,29 +60,30 @@ class Hooks implements
 	}
 
 	/**
-	 * @see https://www.mediawiki.org/wiki/Manual:Hooks/GetStreamConfigs
-	 * @param array &$streamConfigs
+	 * @inheritDoc
 	 */
 	public function onGetStreamConfigs( array &$streamConfigs ): void {
-		if ( !$this->options->get( 'MetricsPlatformEnableStreamConfigsFetching' ) ) {
+		if ( !$this->options->get( 'MetricsPlatformEnableStreamConfigsMerging' ) ) {
 			return;
+		}
+
+		if ( $this->options->get( 'MetricsPlatformEnableStreamConfigsFetching' ) ) {
+			$this->configsFetcher->updateInstrumentConfigs();
 		}
 
 		$instrumentConfigs = $this->configsFetcher->getInstrumentConfigs();
 
-		if ( $this->options->get( 'MetricsPlatformEnableStreamConfigsMerging' ) ) {
-			foreach ( $instrumentConfigs as $value ) {
-				$streamConfigs[ $value['stream_name'] ] = [
-					'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
-					'producers' => [
-						'metrics_platform_client' => [
-							'provide_values' => $value['contextual_attributes']
-						]
-					],
-					'sample' => $value['sample'],
-					'destination_event_service' => self::PRODUCT_METRICS_DESTINATION_EVENT_SERVICE,
-				];
-			}
+		foreach ( $instrumentConfigs as $value ) {
+			$streamConfigs[ $value['stream_name'] ] = [
+				'schema_title' => self::PRODUCT_METRICS_WEB_BASE_SCHEMA_TITLE,
+				'producers' => [
+					'metrics_platform_client' => [
+						'provide_values' => $value['contextual_attributes']
+					]
+				],
+				'sample' => $value['sample'],
+				'destination_event_service' => self::PRODUCT_METRICS_DESTINATION_EVENT_SERVICE,
+			];
 		}
 	}
 }

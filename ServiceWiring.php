@@ -18,9 +18,14 @@ return [
 			InstrumentConfigsFetcher::CONSTRUCTOR_OPTIONS,
 			$services->getMainConfig()
 		);
+
+		$cache = $services->getObjectCacheFactory()->getLocalClusterInstance();
+		$stash = $services->getMainObjectStash();
+
 		return new InstrumentConfigsFetcher(
 			$options,
-			$services->getMainWANObjectCache(),
+			$cache,
+			$stash,
 			$services->getHttpRequestFactory(),
 			$services->getService( 'MetricsPlatform.Logger' ),
 			$services->getStatsFactory()->withComponent( 'MetricsPlatform' ),

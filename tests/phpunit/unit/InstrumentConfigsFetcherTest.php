@@ -2,6 +2,7 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
 
+use Generator;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\Http\HttpRequestFactory;
@@ -13,7 +14,6 @@ use MWHttpRequest;
 use Psr\Log\LoggerInterface;
 use Wikimedia\Message\MessageValue;
 use Wikimedia\ObjectCache\HashBagOStuff;
-use Wikimedia\ObjectCache\WANObjectCache;
 use Wikimedia\Stats\StatsFactory;
 
 /**
@@ -21,27 +21,33 @@ use Wikimedia\Stats\StatsFactory;
  */
 class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	private array $instrumentConfigs;
-	private WANObjectCache $WANObjectCache;
+	private \BagOStuff $cache;
+	private \BagOStuff $stash;
 	private HttpRequestFactory $httpRequestFactory;
 	private LoggerInterface $logger;
 	private StatsFactory $statsFactory;
 	private StatusFormatter $statusFormatter;
+	private InstrumentConfigsFetcher $fetcher;
 
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->instrumentConfigs = $this->getMockResponse();
-		$cache = $this->getWANObjectCache();
-		$this->setService( 'WANObjectCache', $cache );
-		$this->WANObjectCache = $this->getService( 'WANObjectCache' );
+		$this->instrumentConfigs = self::getMockResponse();
+		$this->cache = new HashBagOStuff();
+		$this->stash = new HashBagOStuff();
 		$this->httpRequestFactory = $this->createMock( HttpRequestFactory::class );
 		$this->logger = $this->createMock( LoggerInterface::class );
 		$this->statsFactory = StatsFactory::newNull();
 		$this->statusFormatter = $this->createMock( StatusFormatter::class );
-	}
-
-	private function getWANObjectCache() {
-		return new WANObjectCache( [ 'cache' => new HashBagOStuff() ] );
+		$this->fetcher = new InstrumentConfigsFetcher(
+			$this->mockOptions(),
+			$this->cache,
+			$this->stash,
+			$this->httpRequestFactory,
+			$this->logger,
+			$this->statsFactory,
+			$this->statusFormatter
+		);
 	}
 
 	public function testSuccess() {
@@ -51,32 +57,65 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			->method( 'create' )
 			->willReturn( $httpRequest );
 
-		$fetcher = new InstrumentConfigsFetcher(
-			$this->mockOptions(),
-			$this->WANObjectCache,
-			$this->httpRequestFactory,
-			$this->logger,
-			$this->statsFactory,
-			$this->statusFormatter
+		$this->fetcher->updateInstrumentConfigs();
+
+		$expectedValue = $this->instrumentConfigs['responseArray'];
+		$expectedKey = $this->stash->makeGlobalKey(
+			'MetricsPlatform',
+			'instrument',
+			1
 		);
-		$result = $fetcher->getInstrumentConfigs();
-		$this->assertIsArray( $result );
-		$this->assertCount( 2, $result, 'It should include all activated instruments' );
 
-		$expectedConfig = $this->instrumentConfigs['responseArray'][0];
-		$expectedConfig['sample'] = [
-			'rate' => 1,
-			'unit' => 'pageview',
-		];
-		$expectedResult = [ $expectedConfig ];
-
-		$this->assertArrayEquals( $expectedResult[0], $result[0] );
+		$this->assertEquals(
+			$expectedValue,
+			$this->stash->get( $expectedKey ),
+			'The backing store contains the parsed response'
+		);
+		$this->assertEquals(
+			$expectedValue,
+			$this->cache->get( $expectedKey ),
+			'The cache contains the parsed response'
+		);
 	}
 
-	public function testFailTimeout() {
-		$status = Status::newFatal( "http-timed-out", 408, 'Connection timed out' );
-		$status->setResult( false, 408 );
-		$httpRequest = $this->getHttpRequest( $status );
+	public static function provideRequestFailures(): Generator {
+		// Timeout
+		yield [
+			Status::newFatal( 'http-timed-out', 408, 'Connection timed out' )
+				->setResult( false, 408 ),
+		];
+
+		// Malformed JSON
+		$responseBody = self::getMockResponse()['responseString'];
+		$malformedResponseBody = str_replace( $responseBody, '"', '\'' );
+
+		yield [
+			Status::newFatal( 'http-timed-out', 400, 'Not Found' )
+				->setResult( false, 400 ),
+			$malformedResponseBody,
+		];
+
+		// Redirect
+		yield [
+			Status::newGood( 301 ),
+			'',
+			[
+				new MessageValue( 'metricsplatform-xlab-non-successful-response' ),
+				new MessageValue( 'metricsplatform-xlab-api-empty-response-body' ),
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider provideRequestFailures
+	 */
+	public function testRequestFailure(
+		Status $status,
+		string $responseBody = '',
+		array $expectedErrorMessages = []
+	) {
+		$httpRequest = $this->getHttpRequest( $status, $responseBody );
+
 		$this->httpRequestFactory->expects( $this->once() )
 			->method( 'create' )
 			->willReturn( $httpRequest );
@@ -85,74 +124,109 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			->method( 'getPsr3MessageAndContext' )
 			->willReturn( [ 'error message', [] ] );
 
-		$fetcher = new InstrumentConfigsFetcher(
-			$this->mockOptions(),
-			$this->WANObjectCache,
-			$this->httpRequestFactory,
-			$this->logger,
-			$this->statsFactory,
-			$this->statusFormatter
-		);
-		$result = $fetcher->getInstrumentConfigs();
-		$this->assertArrayEquals( [], $result );
-	}
+		$this->fetcher->updateInstrumentConfigs();
 
-	public function testMalformedResponse() {
-		$response = $this->instrumentConfigs['responseString'];
-		$malformedResponse = str_replace( $response, '"', '\'' );
-		$status = Status::newFatal( "http-timed-out", 400, 'Not Found' );
-		$status->setResult( false, 400 );
-		$httpRequest = $this->getHttpRequest( $status, $malformedResponse );
-		$this->httpRequestFactory->expects( $this->once() )
-			->method( 'create' )
-			->willReturn( $httpRequest );
-
-		$this->statusFormatter->expects( $this->once() )
-			->method( 'getPsr3MessageAndContext' )
-			->willReturn( [ 'message', [] ] );
-
-		$fetcher = new InstrumentConfigsFetcher(
-			$this->mockOptions(),
-			$this->WANObjectCache,
-			$this->httpRequestFactory,
-			$this->logger,
-			$this->statsFactory,
-			$this->statusFormatter
-		);
-		$result = $fetcher->getInstrumentConfigs();
-		$this->assertNotEquals( $this->instrumentConfigs['responseArray'], $result );
-	}
-
-	public function testNonSuccessfulResponse() {
-		$status = Status::newGood( 301 );
-		$httpRequest = $this->getHttpRequest( $status );
-
-		$this->httpRequestFactory->expects( $this->once() )
-			->method( 'create' )
-			->willReturn( $httpRequest );
-
-		$this->statusFormatter->expects( $this->once() )
-			->method( 'getPsr3MessageAndContext' )
-			->willReturn( [ 'metricsplatform-xlab-non-successful-response', [] ] );
-
-		$fetcher = new InstrumentConfigsFetcher(
-			$this->mockOptions(),
-			$this->WANObjectCache,
-			$this->httpRequestFactory,
-			$this->logger,
-			$this->statsFactory,
-			$this->statusFormatter
+		$expectedKey = $this->stash->makeGlobalKey(
+			'MetricsPlatform',
+			'instrument',
+			1
 		);
 
-		$result = $fetcher->getInstrumentConfigs();
-
-		$this->assertEquals( [], $result );
+		$this->assertFalse( $this->stash->get( $expectedKey ) );
+		$this->assertFalse( $this->cache->get( $expectedKey ) );
 
 		$this->assertFalse( $status->isGood() );
+
+		if ( $expectedErrorMessages ) {
+			$this->assertEquals( $expectedErrorMessages, $status->getMessages( 'error' ) );
+		}
+	}
+
+	public function testGetConfigsCacheHit(): void {
+		$key = $this->stash->makeGlobalKey(
+			'MetricsPlatform',
+			'instrument',
+			1
+		);
+		$value = $this->instrumentConfigs['responseArray'];
+
+		$this->cache->set( $key, $value );
+		$this->stash->delete( $key );
+
+		$expectedValue = $value;
+		$expectedValue[0]['sample'] = [
+			'unit' => 'pageview',
+			'rate' => 1,
+		];
+		$expectedValue[1]['sample'] = [
+			'unit' => 'pageview',
+			'rate' => 0.01,
+		];
+
 		$this->assertEquals(
-			[ new MessageValue( 'metricsplatform-xlab-non-successful-response' ) ],
-			$status->getMessages( 'error' ),
-			'The "metricsplatform-xlab-non-successful-response" error was added to the status'
+			$expectedValue,
+			$this->fetcher->getInstrumentConfigs(),
+			'If there is a value in the cache, then it is used'
+		);
+	}
+
+	public function testGetConfigsCacheMissStashHit(): void {
+		$key = $this->stash->makeGlobalKey(
+			'MetricsPlatform',
+			'instrument',
+			1
+		);
+		$value = $this->instrumentConfigs['responseArray'];
+
+		$this->cache->delete( $key );
+		$this->stash->set( $key, $value );
+
+		$expectedValue = $value;
+		$expectedValue[0]['sample'] = [
+			'unit' => 'pageview',
+			'rate' => 1,
+		];
+		$expectedValue[1]['sample'] = [
+			'unit' => 'pageview',
+			'rate' => 0.01,
+		];
+
+		$this->assertEquals(
+			$expectedValue,
+			$this->fetcher->getInstrumentConfigs(),
+			'If there is a value in the stash, then it is used'
+		);
+
+		$this->assertEquals(
+			$value,
+			$this->cache->get( $key ),
+			'The cache has been updated with the value fetched from the stash'
+		);
+	}
+
+	public function testGetConfigsCacheMissStashMiss(): void {
+		$key = $this->stash->makeGlobalKey(
+			'MetricsPlatform',
+			'instrument',
+			1
+		);
+		$value = $this->instrumentConfigs['responseArray'];
+
+		$this->cache->delete( $key );
+		$this->stash->delete( $key );
+
+		$expectedValue = [];
+
+		$this->assertEquals( $expectedValue, $this->fetcher->getInstrumentConfigs()	);
+
+		$this->assertEquals(
+			$expectedValue,
+			$this->cache->get( $key ),
+			'The cache has been updated temporarily'
+		);
+		$this->assertFalse(
+			$this->stash->get( $key ),
+			'The stash has not been updated'
 		);
 	}
 
@@ -165,7 +239,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			] );
 	}
 
-	private function getMockResponse(): array {
+	private static function getMockResponse(): array {
 		$data1 = [
 			"id" => 1,
 			"name" => "Web Scroll UI",
@@ -250,7 +324,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		];
 	}
 
-	private function getHttpRequest( Status $status, $content = '', $headers = [] ) {
+	private function getHttpRequest( Status $status, $responseBody = '', $headers = [] ) {
 		$httpRequest = $this->getMockBuilder( MWHttpRequest::class )
 			->disableOriginalConstructor()
 			->getMock();
@@ -261,8 +335,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		$httpRequest->method( 'getStatus' )
 			->willReturn( $status->getValue() );
 		$httpRequest->method( 'getContent' )
-			->willReturn( $content );
+			->willReturn( $responseBody );
 		return $httpRequest;
 	}
-
 }
