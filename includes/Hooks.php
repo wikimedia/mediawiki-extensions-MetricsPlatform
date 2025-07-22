@@ -64,8 +64,8 @@ class Hooks implements
 	 * @param array &$streamConfigs
 	 */
 	public function onGetStreamConfigs( array &$streamConfigs ): void {
-		if ( $this->options->get( 'MetricsPlatformEnableStreamConfigsFetching' ) ) {
-			$this->configsFetcher->updateInstrumentConfigs();
+		if ( !$this->options->get( 'MetricsPlatformEnableStreamConfigsFetching' ) ) {
+			return;
 		}
 
 		$instrumentConfigs = $this->configsFetcher->getInstrumentConfigs();

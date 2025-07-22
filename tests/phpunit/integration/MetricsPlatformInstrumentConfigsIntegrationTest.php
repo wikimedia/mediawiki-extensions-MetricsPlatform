@@ -206,16 +206,11 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 		$hookContainer = $services->getHookContainer();
 		$hookContainer->register( 'GetStreamConfigs', [ $this, 'onGetStreamConfigs' ] );
 
-		$streamConfigs = $services->getService( 'EventStreamConfig.StreamConfigs' );
-
 		/** @var InstrumentConfigsFetcher $instrumentConfigsFetcher */
 		$instrumentConfigsFetcher = $services->getService( 'MetricsPlatform.ConfigsFetcher' );
 		$mpicStreamConfigs = $instrumentConfigsFetcher->getInstrumentConfigs();
 
-		$this->assertNotEmpty(
-			$mpicStreamConfigs,
-			'Instrument configs were fetched and the backing store was updated.'
-		);
+		$streamConfigs = $services->getService( 'EventStreamConfig.StreamConfigs' );
 
 		$firstStream = $mpicStreamConfigs[0]['stream_name'];
 		$secondStream = $mpicStreamConfigs[1]['stream_name'];

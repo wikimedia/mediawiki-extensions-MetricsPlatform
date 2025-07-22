@@ -6,11 +6,9 @@ use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Json\FormatJson;
 use MediaWiki\MainConfigNames;
-use MediaWiki\Status\Status;
 use MediaWiki\Status\StatusFormatter;
 use Psr\Log\LoggerInterface;
-use Wikimedia\LightweightObjectStore\ExpirationAwareness;
-use Wikimedia\ObjectCache\BagOStuff;
+use Wikimedia\ObjectCache\WANObjectCache;
 use Wikimedia\Stats\StatsFactory;
 
 class InstrumentConfigsFetcher {
@@ -32,7 +30,7 @@ class InstrumentConfigsFetcher {
 		MainConfigNames::DBname,
 	];
 	private ServiceOptions $options;
-	private BagOStuff $objectCache;
+	private WANObjectCache $WANObjectCache;
 	private HttpRequestFactory $httpRequestFactory;
 	private LoggerInterface $logger;
 	private StatsFactory $statsFactory;
@@ -40,7 +38,7 @@ class InstrumentConfigsFetcher {
 
 	public function __construct(
 		ServiceOptions $options,
-		BagOStuff $objectCache,
+		WANObjectCache $WANObjectCache,
 		HttpRequestFactory $httpRequestFactory,
 		LoggerInterface $logger,
 		StatsFactory $statsFactory,
@@ -48,156 +46,115 @@ class InstrumentConfigsFetcher {
 	) {
 		$this->options = $options;
 		$this->options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
-		$this->objectCache = $objectCache;
+		$this->WANObjectCache = $WANObjectCache;
 		$this->httpRequestFactory = $httpRequestFactory;
 		$this->logger = $logger;
 		$this->statsFactory = $statsFactory;
 		$this->statusFormatter = $statusFormatter;
 	}
 
-	/**
-	 * Gets instrument configs from the backing store. If there are no instrument configs in the backing store, then
-	 * they are not fetched from xLab.
-	 */
 	public function getInstrumentConfigs(): array {
-		return $this->getConfigs( self::INSTRUMENT );
+		return $this->getConfigs( 1 );
 	}
 
-	/**
-	 * Gets experiment configs from the backing store. If there are no experiment configs in the backing store, then
-	 * they are not fetched from xLab.
-	 */
 	public function getExperimentConfigs(): array {
-		return $this->getConfigs( self::EXPERIMENT );
-	}
-
-	private function getConfigs( int $type ): array {
-		$configs = $this->objectCache->get( $this->makeCacheKey( $type ), BagOStuff::READ_VERIFIED ) ?: [];
-
-		return $this->processConfigs( $configs );
+		return $this->getConfigs( 2 );
 	}
 
 	/**
-	 * Fetch instrument configs from xLab and update the backing store if they have changed.
+	 * Get the instruments and experiments configuration from the Metrics Platform Configurator API.
 	 *
-	 * @internal
+	 * @param int|null $flag Return only the specified kind of variables: self::INSTRUMENT or self::EXPERIMENT.
+	 *   For internal use only.
+	 * @return array[]
 	 */
-	public function updateInstrumentConfigs(): void {
-		$this->updateConfigs( self::INSTRUMENT );
-	}
+	private function getConfigs( ?int $flag = null ): array {
+		$config = $this->options;
+		$cache = $this->WANObjectCache;
+		$fname = __METHOD__;
 
-	/**
-	 * Fetch experiment configs from xLab and update the backing store if they have changed.
-	 *
-	 * @internal
-	 */
-	public function updateExperimentConfigs(): void {
-		$this->updateConfigs( self::EXPERIMENT );
-	}
+		// Check for which api endpoint should be queried and set corresponding cache key.
+		$type = $flag ?? self::INSTRUMENT;
+		$endpoint = ( $type > 1 ) ? self::XLAB_API_EXPERIMENTS_ENDPOINT : self::XLAB_API_INSTRUMENTS_ENDPOINT;
+		$cacheKey = ( $type === self::EXPERIMENT ) ? 'ExperimentConfigs' : 'InstrumentConfigs';
 
-	private function updateConfigs( int $type ): void {
-		$isExperiment = $type === self::EXPERIMENT;
-		$configsTypeFragment = ( $isExperiment ? 'experiment' : 'instrument' ) . ' configs';
-
-		$this->logger->debug( 'Start updating ' . $configsTypeFragment );
-
-		$newValueStatus = $this->fetchConfigs( $type );
-
-		// Was there an error fetching the configs?
-		if ( !$newValueStatus->isGood() ) {
-			// NOTE: fetchConfigs() handles logging.
-			return;
-		}
-
-		// NOTE: Since the status result of the call to fetchConfigs() was good, we know that we can re-encode the value
-		// of the status result without error.
-		$newValue = $newValueStatus->getValue();
-		$newValueJson = FormatJson::encode( $newValue );
-
-		$key = $this->makeCacheKey( $type );
-		$oldValue = $this->objectCache->get( $key );
-		$oldValueJson = FormatJson::encode( $oldValue );
-
-		if ( $newValueJson !== $oldValueJson ) {
-			$this->logger->info( 'Change detected. Updating ' . $configsTypeFragment );
-
-			$this->objectCache->delete( $key );
-			$this->objectCache->set( $key, $newValue, ExpirationAwareness::TTL_WEEK );
-		}
-
-		$this->logger->debug( 'End updating ' . $configsTypeFragment );
-	}
-
-	private function makeCacheKey( int $type ): string {
-		return $this->objectCache->makeGlobalKey(
-			'MetricsPlatform',
-			$type === self::EXPERIMENT ? 'experiment' : 'instrument',
-			self::VERSION
+		$this->logger->debug(
+			'Start fetching ' . ( $type === self::EXPERIMENT ? 'experiment' : 'instrument' ) . ' configs'
 		);
-	}
 
-	private function fetchConfigs( int $type ): Status {
-		$isExperiment = $type === self::EXPERIMENT;
-		$endpoint = $isExperiment ? self::XLAB_API_EXPERIMENTS_ENDPOINT : self::XLAB_API_INSTRUMENTS_ENDPOINT;
-		$url = $this->options->get( 'MetricsPlatformInstrumentConfiguratorBaseUrl' ) . $endpoint;
+		$result = $cache->getWithSetCallback(
+			$cache->makeGlobalKey( 'MetricsPlatform', $cacheKey, self::VERSION ),
+			$cache::TTL_MINUTE,
+			function () use ( $config, $endpoint, $fname ) {
+				$startTime = microtime( true );
+				$baseUrl = $config->get( 'MetricsPlatformInstrumentConfiguratorBaseUrl' );
+				$url = $baseUrl . $endpoint;
+				$request = $this->httpRequestFactory->create( $url, [ 'timeout' => self::HTTP_TIMEOUT ], $fname );
 
-		$startTime = microtime( true );
-		$request = $this->httpRequestFactory->create(
-			$url,
+				// T398957: Identify the agent fetching the configs in the similar way to the configs fetchers running
+				// on the cache-proxy nodes.
+				//
+				// See https://gerrit.wikimedia.org/r/plugins/gitiles/operations/puppet/+/refs/heads/production/modules/profile/files/cache/wmfuniq_experiment_fetcher.py#52
+				$request->setHeader( 'User-Agent', self::USER_AGENT );
+				$request->setHeader( 'X-Experiment-Config-Poller', wfHostname() );
+
+				$status = $request->execute();
+
+				$responseStatusCode = $request->getStatus();
+
+				if ( !$responseStatusCode < 200 && $responseStatusCode >= 300 ) {
+					$status->fatal( 'metricsplatform-xlab-non-successful-response' );
+				}
+
+				$labels = [];
+				if ( $status->isOK() ) {
+					$labels[] = 'success';
+					$json = $request->getContent();
+				} else {
+					$errors = $status->getMessages( 'error' );
+					$this->logger->warning( ...$this->statusFormatter->getPsr3MessageAndContext( $status,
+						[ 'error' => $errors, 'content' => $request->getContent() ] ) );
+
+					$labels = $this->getClientErrorLabels( $errors );
+					$labels[] = $this->getServerErrorLabel( $status->getValue() );
+
+					$json = null;
+				}
+				// T368253 Use the Stats library for performance reporting.
+				foreach ( $labels as $label ) {
+					$this->incrementApiRequestsTotal( $label );
+				}
+				$this->logApiRequestDuration( $startTime );
+
+				/*
+				HttpRequestFactory::create returns a MWHttpRequest object.
+				MWHttpRequest::execute returns a Status object which provides status
+				codes for more granular Stats reporting. For errors, we return null for
+				the json response which represents all the failure modes we care about:
+				the network being down (DNS resolution not working), connection timeout,
+				request timeout, etc.
+				*/
+				if ( $json === null ) {
+					$this->logger->warning( 'xLab API is not working.' );
+					return [];
+				}
+				return FormatJson::decode( $json, true );
+			},
 			[
-				'timeout' => self::HTTP_TIMEOUT,
-				'logger' => $this->logger
-			],
-			__METHOD__
+				'staleTTL' => $cache::TTL_DAY
+			]
 		);
 
-		// T398957: Identify the agent fetching the configs in the similar way to the configs fetchers running
-		// on the cache-proxy nodes.
-		//
-		// See https://gerrit.wikimedia.org/r/plugins/gitiles/operations/puppet/+/refs/heads/production/modules/profile/files/cache/wmfuniq_experiment_fetcher.py#52
-		$request->setHeader( 'User-Agent', self::USER_AGENT );
-		$request->setHeader( 'X-Experiment-Config-Poller', wfHostname() );
+		$this->logger->debug(
+			'End fetching ' . ( $type === self::EXPERIMENT ? 'experiment' : 'instrument' ) . ' configs'
+		);
 
-		$status = $request->execute();
+		$result = $this->postProcessResult( $result );
+		$nActiveConfigs = count( $result );
 
-		$this->logApiRequestDuration( $startTime );
+		$this->logger->debug( "Fetched { $nActiveConfigs } active config(s)" );
 
-		$responseBody = $request->getContent();
-		$responseStatusCode = $request->getStatus();
-
-		if ( !$responseStatusCode < 200 && $responseStatusCode >= 300 ) {
-			$status->fatal( 'metricsplatform-xlab-non-successful-response' );
-		}
-
-		if ( !$responseBody ) {
-			$status->fatal( 'metricsplatform-xlab-api-empty-response-body' );
-		} else {
-			$status->merge( FormatJson::parse( $responseBody, FormatJson::FORCE_ASSOC ), true );
-		}
-
-		$labels = [ 'success' ];
-
-		if ( !$status->isGood() ) {
-			$errors = $status->getMessages( 'error' );
-
-			$this->logger->warning( ...$this->statusFormatter->getPsr3MessageAndContext(
-				$status,
-				[
-					'errors' => $errors,
-					'content' => $responseBody
-				]
-			) );
-
-			$labels = $this->getClientErrorLabels( $errors );
-			$labels[] = $this->getServerErrorLabel( $responseStatusCode );
-		}
-
-		// T368253 Use the Stats library for performance reporting.
-		foreach ( $labels as $label ) {
-			$this->incrementApiRequestsTotal( $label );
-		}
-
-		return $status;
+		return $result;
 	}
 
 	/**
@@ -210,7 +167,7 @@ class InstrumentConfigsFetcher {
 	 *  TODO: Add a link to the latest response format specification
 	 * @return array
 	 */
-	protected function processConfigs( array $result ): array {
+	protected function postProcessResult( array $result ): array {
 		$dbName = $this->options->get( MainConfigNames::DBname );
 		$processedResult = [];
 

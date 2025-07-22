@@ -7,6 +7,5 @@
 		]
 	},
 	"metricsplatform-desc": "This is the Metrics Platform extension",
-	"metricsplatform-xlab-non-successful-response": "The xLab API returned a non successful response.",
-	"metricsplatform-xlab-api-empty-response-body": "The xLab API returned a response with an empty body."
+	"metricsplatform-xlab-non-successful-response": "The xLab API returned a non successful response."
 }
