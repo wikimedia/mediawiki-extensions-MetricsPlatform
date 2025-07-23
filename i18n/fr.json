@@ -7,6 +7,5 @@
 		]
 	},
 	"metricsplatform-desc": "Il s'agit de l'extension Metrics Platform",
-	"metricsplatform-xlab-non-successful-response": "L'API xLab a renvoyé une réponse non réussie.",
-	"metricsplatform-xlab-api-empty-response-body": "L'API xLab a répondu avec un corps vide."
+	"metricsplatform-xlab-non-successful-response": "L'API xLab a renvoyé une réponse non réussie."
 }

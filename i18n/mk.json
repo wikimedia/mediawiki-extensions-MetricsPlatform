@@ -5,6 +5,5 @@
 		]
 	},
 	"metricsplatform-desc": "Ова е додатокот Подлога за мерила",
-	"metricsplatform-xlab-non-successful-response": "Приложникот xLab даде неуспешен одговор.",
-	"metricsplatform-xlab-api-empty-response-body": "Прилогот xLab API даде одговор со празна содржина."
+	"metricsplatform-xlab-non-successful-response": "Приложникот xLab даде неуспешен одговор."
 }

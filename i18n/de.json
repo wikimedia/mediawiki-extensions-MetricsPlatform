@@ -5,6 +5,5 @@
 		]
 	},
 	"metricsplatform-desc": "Dies ist die Metrics-Plattform-Erweiterung",
-	"metricsplatform-xlab-non-successful-response": "Die xLab-API hat eine nicht erfolgreiche Antwort zurückgegeben.",
-	"metricsplatform-xlab-api-empty-response-body": "Die xLab-API hat eine Antwort mit leerem Inhalt zurückgegeben."
+	"metricsplatform-xlab-non-successful-response": "Die xLab-API hat eine nicht erfolgreiche Antwort zurückgegeben."
 }

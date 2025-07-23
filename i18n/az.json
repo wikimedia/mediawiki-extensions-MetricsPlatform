@@ -5,6 +5,5 @@
 		]
 	},
 	"metricsplatform-desc": "Bu, Metrik Platformasının genişləndirilməsidir",
-	"metricsplatform-xlab-non-successful-response": "xLab API uğursuz cavab qaytardı.",
-	"metricsplatform-xlab-api-empty-response-body": "xLab API boş cavab qaytardı."
+	"metricsplatform-xlab-non-successful-response": "xLab API uğursuz cavab qaytardı."
 }

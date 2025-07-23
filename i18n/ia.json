@@ -5,6 +5,5 @@
 		]
 	},
 	"metricsplatform-desc": "Isto es le extension Metrics Platform",
-	"metricsplatform-xlab-non-successful-response": "Le API de xLab ha restituite un responsa que indica un non-successo.",
-	"metricsplatform-xlab-api-empty-response-body": "Le API xLab ha retornate un responsa con un corpore vacue."
+	"metricsplatform-xlab-non-successful-response": "Le API de xLab ha restituite un responsa que indica un non-successo."
 }
