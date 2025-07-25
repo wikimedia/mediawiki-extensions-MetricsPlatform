@@ -106,6 +106,26 @@ function getExperiment( experimentName ) {
 	);
 }
 
+/**
+ * Gets a map of experiment to group for all experiments that the current user is enrolled into.
+ *
+ * This method is internal and should only be used by other Experimentation Lab components.
+ * Currently, this method is only used by
+ * [the Client Error Logging instrument in WikimediaEvents][0].
+ *
+ * @internal
+ *
+ * [0]: https://gerrit.wikimedia.org/r/plugins/gitiles/mediawiki/extensions/WikimediaEvents/+/refs/heads/master/OWNERS.md#client-error-logging
+ *
+ * @return {Object}
+ * @memberof mw.xLab
+ */
+function getAssignments() {
+	const userExperiments = mw.config.get( 'wgMetricsPlatformUserExperiments' );
+
+	return userExperiments ? Object.assign( {}, userExperiments.assigned ) : {};
+}
+
 function setCookieAndReload( value ) {
 	mw.cookie.set( COOKIE_NAME, value );
 
@@ -183,7 +203,8 @@ function clearExperimentOverrides() {
  * @namespace mw.xLab
  */
 mw.xLab = {
-	getExperiment
+	getExperiment,
+	getAssignments
 };
 
 // JS overriding experimentation feature

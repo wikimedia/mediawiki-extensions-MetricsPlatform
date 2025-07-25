@@ -90,3 +90,30 @@ QUnit.test( 'overrideExperimentGroup() - multiple calls with different $groupNam
 
 	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:baz' );
 } );
+
+QUnit.test( 'getAssignments() - disallows modification of wgMetricsPlatformUserExperiments', ( assert ) => {
+	const assigned = {
+		fruit: 'tropical'
+	};
+
+	mw.config.set( 'wgMetricsPlatformUserExperiments', {
+		assigned
+	} );
+
+	assert.deepEqual( mw.xLab.getAssignments(), assigned );
+
+	const result = mw.xLab.getAssignments();
+	result.foo = 'bar';
+	result.bar = 'baz';
+
+	assert.deepEqual(
+		mw.xLab.getAssignments(),
+		assigned,
+		'The result of mw.xLab.getAssignments() is unchanged'
+	);
+	assert.deepEqual(
+		mw.config.get( 'wgMetricsPlatformUserExperiments' ).assigned,
+		assigned,
+		'wgMetricsPlatformUserExperiments is unchanged'
+	);
+} );
