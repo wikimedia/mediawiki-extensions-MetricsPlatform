@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\unit;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
 
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;

@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\unit;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
 
 use DomainException;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder;

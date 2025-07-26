@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\unit;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
 
 use Generator;
 use MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation;
