@@ -156,13 +156,13 @@ function overrideExperimentGroup(
 	if ( rawOverrides === '' ) {
 		// If the cookie isn't set, then the value of the cookie is the given override.
 		setCookieAndReload( part );
-	} else if ( !rawOverrides.includes( `${ experimentName }` ) ) {
+	} else if ( !rawOverrides.includes( `${ experimentName }:` ) ) {
 		// If the cookie is set but doesn't have an override for the given experiment name/group
 		// variant pair, then append the given override.
 		setCookieAndReload( `${ rawOverrides };${ part }` );
 	} else {
 		setCookieAndReload( rawOverrides.replace(
-			new RegExp( `${ experimentName }:\\w+?(?=;|$)` ),
+			new RegExp( `${ experimentName }:[A-Za-z0-9][-_.A-Za-z0-9]+?(?=;|$)` ),
 			part
 		) );
 	}
@@ -179,12 +179,19 @@ function overrideExperimentGroup(
  */
 function clearExperimentOverride( experimentName ) {
 	const rawOverrides = mw.cookie.get( COOKIE_NAME, null, '' );
-	const part = null;
 
-	setCookieAndReload( rawOverrides.replace(
-		new RegExp( `${ experimentName }:\\w+?(?=;|$)` ),
-		part
-	) );
+	let newRawOverrides = rawOverrides.replace(
+		new RegExp( `;?${ experimentName }:[A-Za-z0-9][-_.A-Za-z0-9]+` ),
+		''
+	);
+
+	// If the new cookie starts with a ';' character, then trim it.
+	newRawOverrides = newRawOverrides.replace( /^;/, '' );
+
+	// If the new cookie is empty, then clear the cookie.
+	newRawOverrides = newRawOverrides || null;
+
+	setCookieAndReload( newRawOverrides );
 }
 
 /**

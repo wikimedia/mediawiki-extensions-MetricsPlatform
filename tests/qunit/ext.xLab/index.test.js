@@ -91,6 +91,48 @@ QUnit.test( 'overrideExperimentGroup() - multiple calls with different $groupNam
 	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:baz' );
 } );
 
+QUnit.test( 'overrideExperimentGroup() - multiple calls with $groupName with hyphens', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar-baz' );
+	mw.xLab.overrideExperimentGroup( 'foo', 'baz' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:baz' );
+} );
+
+QUnit.test( 'clearExperimentGroup() - single override', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+	mw.xLab.clearExperimentOverride( 'foo' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), null );
+} );
+
+QUnit.test( 'clearExperimentGroup() - multiple overrides', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+	mw.xLab.overrideExperimentGroup( 'baz', 'qux' );
+
+	mw.xLab.clearExperimentOverride( 'baz' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:bar' );
+} );
+
+QUnit.test( 'clearExperimentGroup() - multiple overrides with experiment in the middle', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo', 'bar' );
+	mw.xLab.overrideExperimentGroup( 'baz', 'qux' );
+	mw.xLab.overrideExperimentGroup( 'qux', 'quux' );
+
+	mw.xLab.clearExperimentOverride( 'baz' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'foo:bar;qux:quux' );
+} );
+
+QUnit.test( 'clearExperimentGroup() - multiple overrides with $groupName with hyphens', ( assert ) => {
+	mw.xLab.overrideExperimentGroup( 'foo-bar', 'baz-qux' );
+	mw.xLab.overrideExperimentGroup( 'qux-quux', 'corge-grault' );
+
+	mw.xLab.clearExperimentOverride( 'foo-bar' );
+
+	assert.strictEqual( mw.cookie.get( 'mpo' ), 'qux-quux:corge-grault' );
+} );
+
 QUnit.test( 'getAssignments() - disallows modification of wgMetricsPlatformUserExperiments', ( assert ) => {
 	const assigned = {
 		fruit: 'tropical'
