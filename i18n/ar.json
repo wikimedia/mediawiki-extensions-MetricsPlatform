@@ -1,8 +1,11 @@
 {
 	"@metadata": {
 		"authors": [
+			"Meno25",
 			"NEHAOUA"
 		]
 	},
-	"metricsplatform-desc": "هذا هو امتداد منصة المقاييس"
+	"metricsplatform-desc": "هذا هو امتداد منصة المقاييس",
+	"metricsplatform-xlab-non-successful-response": "أرجعت واجهة برمجة التطبيقات xLab استجابة غير ناجحة.",
+	"metricsplatform-xlab-api-empty-response-body": "أرجعت واجهة برمجة التطبيقات xLab استجابة بنص فارغ."
 }

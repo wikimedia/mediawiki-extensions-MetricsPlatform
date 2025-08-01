@@ -6,5 +6,6 @@
 		]
 	},
 	"metricsplatform-desc": "Dit is de uitbreiding Metrics Platform",
-	"metricsplatform-xlab-non-successful-response": "De xLab-API heeft een niet-succesvol antwoord geretourneerd."
+	"metricsplatform-xlab-non-successful-response": "De xLab-API heeft een niet-succesvol antwoord geretourneerd.",
+	"metricsplatform-xlab-api-empty-response-body": "De API van xLab heeft een antwoord met een lege inhoud geretourneerd."
 }
