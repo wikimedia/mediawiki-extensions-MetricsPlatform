@@ -41,7 +41,8 @@ class ExperimentManager {
 	 * @return Experiment
 	 */
 	public function getExperiment( string $experimentName ): Experiment {
-		$isExperimentDefined = in_array( $experimentName, $this->enrollmentResult['active_experiments'], true );
+		$activeExperiments = $this->enrollmentResult['active_experiments'] ?? [];
+		$isExperimentDefined = in_array( $experimentName, $activeExperiments, true );
 		$experimentConfig = [];
 
 		if ( !$isExperimentDefined ) {

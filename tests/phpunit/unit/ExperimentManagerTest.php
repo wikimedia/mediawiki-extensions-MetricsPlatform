@@ -99,4 +99,13 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 
 		$this->assertEquals( $expectedExperiment, $actualExperiment );
 	}
+
+	public function testGetExperimentUninitialized(): void {
+		$experimentManager = new ExperimentManager( $this->logger, $this->metricsPlatformClient );
+
+		$expectedExperiment = new Experiment( $this->metricsPlatformClient, [] );
+		$actualExperiment = $experimentManager->getExperiment( 'foo' );
+
+		$this->assertEquals( $expectedExperiment, $actualExperiment );
+	}
 }
