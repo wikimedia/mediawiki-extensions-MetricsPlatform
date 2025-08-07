@@ -54,15 +54,21 @@ class Hooks implements
 			return;
 		}
 
-		if ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
-			$this->configsFetcher->updateExperimentConfigs();
+		$activeLoggedInExperiments = [];
+
+		// Optimization: Only get experiment configs from the InstrumentConfigsFetcher's backing store if the user is
+		// registered.
+		if ( $user->isRegistered() ) {
+			if ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
+				$this->configsFetcher->updateExperimentConfigs();
+			}
+
+			$activeLoggedInExperiments = $this->config->has( 'MetricsPlatformExperiments' ) ?
+				$this->config->get( 'MetricsPlatformExperiments' ) :
+				$this->configsFetcher->getExperimentConfigs();
 		}
 
-		$activeExperiments = $this->config->has( 'MetricsPlatformExperiments' ) ?
-			$this->config->get( 'MetricsPlatformExperiments' ) :
-			$this->configsFetcher->getExperimentConfigs();
-
-		$enrollmentRequest = new EnrollmentRequest( $activeExperiments, $user, $request );
+		$enrollmentRequest = new EnrollmentRequest( $activeLoggedInExperiments, $user, $request );
 		$result = new EnrollmentResultBuilder();
 
 		$this->enrollmentAuthority->enrollUser( $enrollmentRequest, $result );
