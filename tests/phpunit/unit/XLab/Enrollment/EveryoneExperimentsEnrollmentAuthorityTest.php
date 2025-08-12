@@ -48,15 +48,15 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 	public function testHeaderHasOneAssignment(): void {
 		$this->request->expects( $this->once() )
 			->method( 'getRawEveryoneExperimentsEnrollments' )
-			->willReturn( 'foo=bar;' );
+			->willReturn( 'foo_experiment=bar;' );
 
 		$this->result->expects( $this->once() )
 			->method( 'addExperiment' )
-			->with( 'foo', 'awaiting', 'edge-unique' );
+			->with( 'foo_experiment', 'awaiting', 'edge-unique' );
 
 		$this->result->expects( $this->once() )
 			->method( 'addAssignment' )
-			->with( 'foo', 'bar' );
+			->with( 'foo_experiment', 'bar' );
 
 		$this->logger->expects( $this->never() )
 			->method( 'error' );
@@ -67,7 +67,7 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 	public function testHeaderHasMultipleAssignments(): void {
 		$this->request->expects( $this->once() )
 			->method( 'getRawEveryoneExperimentsEnrollments' )
-			->willReturn( 'foo=bar;qux=quux;' );
+			->willReturn( 'foo_experiment=bar;qux_experiment=quux;' );
 
 		// withConsecutive was deprecated in PHPUnit 9 and removed in 10. The following is based on the replacement
 		// suggested by Tomas Votruba in
@@ -80,14 +80,14 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->willReturnCallback( function ( ...$parameters ) use ( $addExperimentInvokedCount ) {
 				if ( $addExperimentInvokedCount->getInvocationCount() === 1 ) {
 					$this->assertSame(
-						[ 'foo', 'awaiting', 'edge-unique' ],
+						[ 'foo_experiment', 'awaiting', 'edge-unique' ],
 						$parameters
 					);
 				}
 
 				if ( $addExperimentInvokedCount->getInvocationCount() === 2 ) {
 					$this->assertSame(
-						[ 'qux', 'awaiting', 'edge-unique' ],
+						[ 'qux_experiment', 'awaiting', 'edge-unique' ],
 						$parameters
 					);
 				}
@@ -100,14 +100,14 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->willReturnCallback( function ( ...$parameters ) use ( $addEnrollmentInvokedCount ) {
 				if ( $addEnrollmentInvokedCount->getInvocationCount() === 1 ) {
 					$this->assertSame(
-						[ 'foo', 'bar', false ],
+						[ 'foo_experiment', 'bar', false ],
 						$parameters
 					);
 				}
 
 				if ( $addEnrollmentInvokedCount->getInvocationCount() === 2 ) {
 					$this->assertSame(
-						[ 'qux', 'quux', false ],
+						[ 'qux_experiment', 'quux', false ],
 						$parameters
 					);
 				}
@@ -122,7 +122,7 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 	public function testHeaderIsMalformed(): void {
 		$this->request->expects( $this->once() )
 			->method( 'getRawEveryoneExperimentsEnrollments' )
-			->willReturn( 'foo=bar;qux;' );
+			->willReturn( 'foo_experiment=bar;qux_experiment;' );
 
 		$this->result->expects( $this->never() )
 			->method( 'addExperiment' );
@@ -134,6 +134,48 @@ class EveryoneExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 			->method( 'error' )
 			->with(
 				'The X-Experiment-Enrollments header could not be parsed properly. The header is malformed.'
+			);
+
+		$this->authority->enrollUser( $this->request, $this->result );
+	}
+
+	public function testHeaderExperimentNameIsInvalid(): void {
+		$this->request->expects( $this->once() )
+			->method( 'getRawEveryoneExperimentsEnrollments' )
+			->willReturn( 'foo=bar;valid_experiment=quux;' );
+
+		$this->result->expects( $this->never() )
+			->method( 'addExperiment' );
+
+		$this->result->expects( $this->never() )
+			->method( 'addAssignment' );
+
+		$this->logger->expects( $this->once() )
+			->method( 'error' )
+			->with(
+				'The X-Experiment-Enrollments header could not be parsed. The experiment name ' .
+				'{experiment_name} is invalid'
+			);
+
+		$this->authority->enrollUser( $this->request, $this->result );
+	}
+
+	public function testHeaderGroupNameIsInvalid(): void {
+		$this->request->expects( $this->once() )
+			->method( 'getRawEveryoneExperimentsEnrollments' )
+			->willReturn( 'foo_experiment=bar;valid_experiment=-invalid_group_name;' );
+
+		$this->result->expects( $this->never() )
+			->method( 'addExperiment' );
+
+		$this->result->expects( $this->never() )
+			->method( 'addAssignment' );
+
+		$this->logger->expects( $this->once() )
+			->method( 'error' )
+			->with(
+				'The X-Experiment-Enrollments header could not be parsed. The group name {group_name} ' .
+				'for experiment {experiment_name} is invalid'
 			);
 
 		$this->authority->enrollUser( $this->request, $this->result );

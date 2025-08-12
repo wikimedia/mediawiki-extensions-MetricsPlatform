@@ -44,6 +44,34 @@ class EveryoneExperimentsEnrollmentAuthority implements EnrollmentAuthorityInter
 			$assignment = explode( '=', $rawAssignment );
 
 			if ( count( $assignment ) === 2 ) {
+
+				// T394761: Experiment and group names must validate against the Varnish config schema
+				// See https://gitlab.wikimedia.org/repos/sre/libvmod-wmfuniq/-/blob/3656b05f3f678ed012f45473bbf8054db95f6572/schema/abtests_schema.json
+				if ( !preg_match( "/^[A-Za-z0-9][-_.A-Za-z0-9]{7,62}$/", $assignment[0] ) ) {
+					$this->logger->error(
+						'The X-Experiment-Enrollments header could not be parsed. The experiment name ' .
+						'{experiment_name} is invalid',
+						[
+							'experiment_name' => $assignment[0],
+						]
+					);
+
+					return;
+				}
+
+				if ( !preg_match( "/^[A-Za-z0-9][-_.A-Za-z0-9]{0,62}$/", $assignment[1] ) ) {
+					$this->logger->error(
+						'The X-Experiment-Enrollments header could not be parsed. The group name {group_name} ' .
+						'for experiment {experiment_name} is invalid',
+						[
+							'group_name' => $assignment[1],
+							'experiment_name' => $assignment[0],
+						]
+					);
+
+					return;
+				}
+
 				$assignments[ $assignment[0] ] = $assignment[1];
 			} else {
 				$this->logger->error(
