@@ -74,6 +74,7 @@ INSERT INTO contextual_attributes (contextual_attribute_name) VALUES
 	('mediawiki_site_content_language_variant'),
 	('performer_active_browsing_session_token'),
 	('performer_is_logged_in'),
+	('performer_is_temp'),
 	('performer_id'),
 	('performer_name'),
 	('performer_session_id'),
