@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use MediaWiki\Extension\EventStreamConfig\Hooks\GetStreamConfigsHook;
 use MediaWiki\Extension\MetricsPlatform\Hooks;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
@@ -51,21 +53,13 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 			MainConfigNames::DBname => 'bnwiki'
 		] );
 
+		$now = new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) );
+		// The last instrument has not started yet
 		$this->installMockHttp( $this->makeFakeHttpRequest( '[
 			{
-				"id": 1,
-				"name": "Web Scroll UI",
 				"slug": "web-scroll-ui",
-				"description": "abc description",
-				"creator": "Jane Doe",
-				"owner": "Web Team",
-				"purpose": "purpose 1",
-				"created_at": "2024-05-03T03:22:15.000Z",
-				"updated_at": "2024-05-03T03:22:15.000Z",
-				"utc_start_dt": "2024-05-03T03:22:15.000Z",
-				"utc_end_dt": "2024-05-25T06:00:00.000Z",
-				"task": "task 1",
-				"compliance_requirements": "legal",
+				"start": "' . $now->modify( '-1 month' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
+				"end": "' . $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
 				"sample_unit": "pageview",
 				"sample_rate": {
 					"default": 0.25,
@@ -73,14 +67,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 						"bnwiki"
 					]
 				},
-				"environments": "development",
-				"security_legal_review": "pending",
-				"status": 1,
 				"stream_name": "mediawiki.web_ui_scroll",
 				"schema_title": "analytics/mediawiki/web_ui_scroll",
-				"schema_type": "custom",
-				"email_address": "web@wikimedia.org",
-				"type": "baseline",
 				"contextual_attributes": [
 					"page_namespace",
 					"page_revision_id",
@@ -91,19 +79,9 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 				]
 			},
 			{
-				"id": 2,
-				"name": "Desktop UI Interactions",
 				"slug": "desktop-ui-interactions",
-				"description": "efd description",
-				"creator": "Jill Hill",
-				"owner": "Editing Team",
-				"purpose": "purpose 1",
-				"created_at": "2024-05-03T03:22:15.000Z",
-				"updated_at": "2024-05-03T03:22:15.000Z",
-				"utc_start_dt": "2024-05-03T03:22:15.000Z",
-				"utc_end_dt": "2024-05-15T06:00:00.000Z",
-				"task": "task 1",
-				"compliance_requirements": "gdpr",
+				"start": "' . $now->modify( '-1 week' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
+				"end": "' . $now->modify( '+2 weeks' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
 				"sample_unit": "session",
 				"sample_rate": {
 					"default": 0.5,
@@ -116,14 +94,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 						"enwiki"
 					]
 				},
-				"environments": "staging",
-				"security_legal_review": "reviewed",
-				"status": 1,
 				"stream_name": "mediawiki.desktop_ui_interactions",
 				"schema_title": "analytics/product_metrics/mediawiki/desktop_ui_interactions/",
-				"schema_type": "custom",
-				"email_address": "web@wikimedia.org",
-				"type": "baseline",
 				"contextual_attributes": [
 					"page_id",
 					"page_title",
@@ -132,19 +104,9 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 				]
 			},
 			{
-				"id": 3,
-				"name": "Test Instrument",
 				"slug": "test-instrument",
-				"description": "test description",
-				"creator": "Test Creator",
-				"owner": "Test Team",
-				"purpose": "Test Purpose",
-				"created_at": "2024-05-03T03:22:15.000Z",
-				"updated_at": "2024-05-03T03:22:15.000Z",
-				"utc_start_dt": "2024-05-03T03:22:15.000Z",
-				"utc_end_dt": "2024-05-15T06:00:00.000Z",
-				"task": "Test task",
-				"compliance_requirements": "gdpr",
+				"start": "' . $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
+				"end": "' . $now->modify( '+3 month' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
 				"sample_unit": "session",
 				"sample_rate": {
 					"default": 0.5,
@@ -152,14 +114,8 @@ class MetricsPlatformInstrumentConfigsIntegrationTest
 						"frwiki"
 					]
 				},
-				"environments": "staging",
-				"security_legal_review": "pending",
-				"status": 0,
 				"stream_name": "test_stream",
 				"schema_title": "test_schema",
-				"schema_type": "custom",
-				"email_address": "info@wikimedia.org",
-				"type": "baseline",
 				"contextual_attributes": [
 					"page_id",
 					"page_namespace"

@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Generator;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
@@ -148,7 +150,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			'instrument',
 			1
 		);
-		$value = $this->instrumentConfigs['responseArray'];
+		$value = array_slice( $this->instrumentConfigs['responseArray'], 0, 2 );
 
 		$this->cache->set( $key, $value );
 		$this->stash->delete( $key );
@@ -176,7 +178,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			'instrument',
 			1
 		);
-		$value = $this->instrumentConfigs['responseArray'];
+		$value = array_slice( $this->instrumentConfigs['responseArray'], 0, 2 );
 
 		$this->cache->delete( $key );
 		$this->stash->set( $key, $value );
@@ -210,7 +212,6 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			'instrument',
 			1
 		);
-		$value = $this->instrumentConfigs['responseArray'];
 
 		$this->cache->delete( $key );
 		$this->stash->delete( $key );
@@ -240,20 +241,12 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	}
 
 	private static function getMockResponse(): array {
+		$now = new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) );
+
 		$data1 = [
-			"id" => 1,
-			"name" => "Web Scroll UI",
 			"slug" => "web-scroll-ui",
-			"description" => "Tracks scroll events",
-			"creator" => "Jane Doe",
-			"owner" => "Web Team",
-			"purpose" => "KR 3.5",
-			"created_at" => "2024-05-29T01:21:55.000Z",
-			"updated_at" => "2024-05-30T01:21:55.000Z",
-			"utc_start_dt" => "2024-06-01T01:21:55.000Z",
-			"utc_end_dt" => "2024-06-30T06:00:00.000Z",
-			"task" => "T123456",
-			"compliance_requirements" => "legal",
+			"start" => $now->modify( '-1 month' )->format( 'Y-m-d\TH:i:s\Z' ),
+			"end" => $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
 			"sample_rate" => [
 				"default" => 1,
@@ -261,14 +254,8 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 					"bnwiki"
 				],
 			],
-			"environments" => "development",
-			"security_legal_review" => "pending",
-			"status" => 0,
 			"stream_name" => "mediawiki.web_ui_scroll",
 			"schema_title" => "analytics/mediawiki/web_ui_scroll",
-			"schema_type" => "custom",
-			"email_address" => "web@wikimedia.org",
-			"type" => "baseline",
 			"contextual_attributes" => [
 				"page_namespace",
 				"page_revision_id",
@@ -279,19 +266,9 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			],
 		];
 		$data2 = [
-			"id" => 2,
-			"name" => "Desktop UI Interactions",
 			"slug" => "desktop-ui-interactions",
-			"description" => "Track UI events in desktop",
-			"creator" => "James Doe",
-			"owner" => "Web Team",
-			"purpose" => "KR 3.6",
-			"created_at" => "2024-06-01T01:21:55.000Z",
-			"updated_at" => "2024-06-03T01:21:55.000Z",
-			"utc_start_dt" => "2024-07-01T01:21:55.000Z",
-			"utc_end_dt" => "2024-07-31T06:00:00.000Z",
-			"task" => "T234567",
-			"compliance_requirements" => "legal",
+			"start" => $now->modify( '-1 week' )->format( 'Y-m-d\TH:i:s\Z' ),
+			"end" => $now->modify( '+1 week' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
 			"sample_rate" => [
 				"default" => 0.5,
@@ -302,14 +279,8 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 					"enwiki"
 				]
 			],
-			"environments" => "staging",
-			"security_legal_review" => "pending",
-			"status" => 1,
 			"stream_name" => "mediawiki.desktop_ui_interactions",
 			"schema_title" => "analytics/product_metrics/mediawiki/desktop_ui_interactions/",
-			"schema_type" => "custom",
-			"email_address" => "web@wikimedia.org",
-			"type" => "baseline",
 			"contextual_attributes" => [
 				"page_id",
 				"page_title",
@@ -317,10 +288,32 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 				"mediawiki_skin"
 			],
 		];
+		// This instrument won't be considered because it has not started yet
+		$data3 = [
+			"slug" => "CTRInstrument",
+			"start" => $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ),
+			"end" => $now->modify( '-2 month' )->format( 'Y-m-d\TH:i:s\Z' ),
+			"sample_unit" => "pageview",
+			"sample_rate" => [
+				"default" => 0.2,
+				"0.1" => [
+					"frwiki"
+				],
+				"0.05" => [
+					"enwiki"
+				]
+			],
+			"stream_name" => "product_metrics.web_base",
+			"schema_title" => "analytics/product_metrics/web/base/",
+			"contextual_attributes" => [
+				"page_id",
+				"page_title"
+			],
+		];
 
 		return [
-			'responseString' => FormatJson::encode( [ $data1, $data2 ] ),
-			'responseArray' => [ $data1, $data2 ]
+			'responseString' => FormatJson::encode( [ $data1, $data2, $data3 ] ),
+			'responseArray' => [ $data1, $data2, $data3 ]
 		];
 	}
 

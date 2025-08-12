@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\MetricsPlatform;
 
+use DateMalformedStringException;
+use DateTimeImmutable;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Json\FormatJson;
@@ -238,7 +240,7 @@ class InstrumentConfigsFetcher {
 	/**
 	 * Post-processes the result of successful request to xLab by:
 	 *
-	 * 1. Filtering out disabled instruments/experiments (`status=0`)
+	 * 1. Filtering out non-active yet/inactive instruments/experiments (based on `start` and `end` dates respectively)
 	 * 2. Extracting the sample config for the current wiki
 	 *
 	 * @param array $result An array of configs retrieved from xLab
@@ -248,11 +250,31 @@ class InstrumentConfigsFetcher {
 	protected function processConfigs( array $result ): array {
 		$dbName = $this->options->get( MainConfigNames::DBname );
 		$processedResult = [];
+		$now = new DateTimeImmutable();
 
 		foreach ( $result as $config ) {
-			$config['sample'] = $this->getSampleConfig( $config, $dbName );
+			try {
+				$start = new DateTimeImmutable( $config[ 'start' ] );
+				$end = new DateTimeImmutable( $config[ 'end' ] );
+				// If the instrument/experiment hasn't started yet or has already finished, it won't be considered
+				if ( $start > $now || $end < $now ) {
+					continue;
+				}
 
-			$processedResult[] = $config;
+				$config['sample'] = $this->getSampleConfig( $config, $dbName );
+
+				$processedResult[] = $config;
+			} catch ( DateMalformedStringException $e ) {
+				$this->logger->error(
+					'start/end date could not be parsed while processing configs. ' .
+					'It seems xLab is emitting invalid dates: {exception}',
+					[
+						'exception' => $e,
+					]
+				);
+
+				return [];
+			}
 		}
 
 		return $processedResult;

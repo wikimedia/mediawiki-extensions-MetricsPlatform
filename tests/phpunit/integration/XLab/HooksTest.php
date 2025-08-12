@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use MediaWiki\Actions\ActionEntryPoint;
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\MetricsPlatform\XLab\Hooks;
@@ -51,10 +53,13 @@ class HooksTest
 			'MetricsPlatformEnableStreamConfigsMerging' => false,
 		] );
 
+		$now = new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) );
+		// logged-in-experiment-3 shouldn't be considered (it hasn't started yet)
 		$this->installMockHttp( $this->makeFakeHttpRequest( '[
 			{
     			"name": "logged-in-experiment-1",
-                "status": 1,
+    			"start": "' . $now->modify( '-1 month' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
+    			"end": "' . $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
     			"sample_rate": {
     	  			"default": 1
      			},
@@ -62,7 +67,8 @@ class HooksTest
 			},
 			{
     			"name": "logged-in-experiment-2",
-                "status": 1,
+    			"start": "' . $now->modify( '-1 week' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
+    			"end": "' . $now->modify( '+1 week' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
     			"sample_rate": {
     	  			"default": 1
      			},
@@ -70,9 +76,10 @@ class HooksTest
 			},
 			{
     			"name": "logged-in-experiment-3",
-                "status": 1,
+    			"start": "' . $now->modify( '+1 week' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
+    			"end": "' . $now->modify( '+2 week' )->format( 'Y-m-d\TH:i:s\Z' ) . '",
     			"sample_rate": {
-    	  			"default": 0
+    	  			"default": 1
      			},
      			"groups": [ "control", "group-another-thing" ]
 			}
@@ -83,7 +90,6 @@ class HooksTest
 		$this->setService( 'CentralIdLookup', $this->centralIdLookup );
 
 		$this->resetServices();
-
 		$this->context = new RequestContext();
 		$this->output = new OutputPage( $this->context );
 		$this->entryPoint = $this->createMock( ActionEntryPoint::class );
@@ -179,8 +185,7 @@ class HooksTest
 				'experiment_1',
 				'experiment_2',
 				'logged-in-experiment-1',
-				'logged-in-experiment-2',
-				'logged-in-experiment-3',
+				'logged-in-experiment-2'
 			],
 			'enrolled' => [
 				'experiment_1',
@@ -198,15 +203,13 @@ class HooksTest
 				'experiment_1' => 'awaiting',
 				'experiment_2' => 'awaiting',
 				'logged-in-experiment-1' => '9b6a4e7d98cd96a463fbcadb9e9edfdd9e4b5d9560c79b9d16b38599cb23128e',
-				'logged-in-experiment-2' => '94d25f0b2bd16c79bad41a0b9713a604e6b709ffe30124f5bb68bcae9d57ba38',
-				'logged-in-experiment-3' => '9f3697ea12180be2fefaf5463333f539374a667f16037768e67fe0cb7e5b622e',
+				'logged-in-experiment-2' => '94d25f0b2bd16c79bad41a0b9713a604e6b709ffe30124f5bb68bcae9d57ba38'
 			],
 			'sampling_units' => [
 				'experiment_1' => 'edge-unique',
 				'experiment_2' => 'edge-unique',
 				'logged-in-experiment-1' => 'mw-user',
-				'logged-in-experiment-2' => 'mw-user',
-				'logged-in-experiment-3' => 'mw-user',
+				'logged-in-experiment-2' => 'mw-user'
 			],
 			'overrides' => []
 		];
