@@ -1,6 +1,3 @@
-// Test cases when the user is not logged-in or
-// `MetricsPlatformEnableExperiments` is falsy
-// (wgMetricsPlatformUserExperiments will be 'undefined')
 QUnit.module( 'ext.xLab', QUnit.newMwEnvironment( {
 	beforeEach: function () {
 		this.originalMPOCookie = mw.cookie.get( 'mpo' );
@@ -15,9 +12,14 @@ QUnit.module( 'ext.xLab', QUnit.newMwEnvironment( {
 } ) );
 
 QUnit.test( 'getExperiment() - handles invalid config', ( assert ) => {
+	// Test cases for when $wgMetricsPlatformEnableExperiments is falsy
+	// (wgMetricsPlatformUserExperiments will be undefined).
+
+	const { UnenrolledExperiment } = mw.xLab;
+
 	const e = mw.xLab.getExperiment( 'an_experiment_name' );
 
-	assert.strictEqual( typeof e, 'object' );
+	assert.true( e instanceof UnenrolledExperiment );
 	assert.strictEqual( e.getAssignedGroup(), null );
 } );
 
@@ -60,6 +62,36 @@ QUnit.test.each(
 		);
 	}
 );
+
+QUnit.test( 'getExperiment() - handles overridden experiment', ( assert ) => {
+	mw.config.set( 'wgMetricsPlatformUserExperiments', {
+		enrolled: [
+			'fruit'
+		],
+		assigned: {
+			fruit: 'gooseberry'
+		},
+		subject_ids: {
+			fruit: 'overridden'
+		},
+		sampling_units: {
+			fruit: 'overridden'
+		},
+		active_experiments: [
+			'fruit'
+		],
+		overrides: [ 'fruit' ]
+	} );
+
+	const { OverriddenExperiment } = mw.xLab;
+
+	const e = mw.xLab.getExperiment( 'fruit' );
+
+	assert.true( e instanceof OverriddenExperiment );
+	assert.strictEqual( e.getAssignedGroup(), 'gooseberry' );
+} );
+
+// ---
 
 // Test cases for the overriding feature
 QUnit.test( 'overrideExperimentGroup() - single call', ( assert ) => {
@@ -132,6 +164,8 @@ QUnit.test( 'clearExperimentGroup() - multiple overrides with $groupName with hy
 
 	assert.strictEqual( mw.cookie.get( 'mpo' ), 'qux-quux:corge-grault' );
 } );
+
+// ---
 
 QUnit.test( 'getAssignments() - disallows modification of wgMetricsPlatformUserExperiments', ( assert ) => {
 	const assigned = {

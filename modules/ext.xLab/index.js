@@ -1,6 +1,6 @@
 'use strict';
 
-const Experiment = require( './Experiment.js' );
+const { Experiment, UnenrolledExperiment, OverriddenExperiment } = require( './Experiment.js' );
 
 const COOKIE_NAME = 'mpo';
 
@@ -18,6 +18,7 @@ const { newMetricsClient, DefaultEventSubmitter } = require( 'ext.eventLogging.m
 
 /**
  * @param {string} intakeServiceUrl
+ * @return {Object}
  * @ignore
  */
 function newMetricsClientInternal( intakeServiceUrl ) {
@@ -66,33 +67,32 @@ function getExperiment( experimentName ) {
 	if ( !userExperiments || !userExperiments.assigned[ experimentName ] ) {
 		mw.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
 			'Is the experiment configured and running?' );
-		return new Experiment(
-			everyoneExperimentMetricsClient,
-			experimentName,
-			null,
-			null,
-			null,
-			null
-		);
+
+		return new UnenrolledExperiment( experimentName );
 	}
 
 	const assignedGroup = userExperiments.assigned[ experimentName ];
 	const samplingUnit = userExperiments.sampling_units[ experimentName ];
-	const subjectId = samplingUnit === 'mw-user' ?
+	const isLoggedInExperiment = samplingUnit === 'mw-user';
+	const subjectId = isLoggedInExperiment ?
 		userExperiments.subject_ids[ experimentName ] :
 		'awaiting';
-	const coordinator = userExperiments.overrides.includes( experimentName ) ?
-		'forced' :
-		'xLab';
 
-	/*
-	  Provide an alternate MetricsClient for logged-in experiments to override the
-	  eventIntakeServiceUrl set by config (wgMetricsPlatformExperimentEventIntakeServiceUrl
-	  = '/evt-103e/v2/events?hasty=true' on production) which drops events if everyone experiment
-	  enrollments are not included. DefaultEventSubmitter sets DEFAULT_EVENT_INTAKE_URL to the
-	  eventgate-analytics-external cluster. See https://phabricator.wikimedia.org/T395779.
-	*/
-	const metricsClient = samplingUnit === 'mw-user' ?
+	if ( userExperiments.overrides.includes( experimentName ) ) {
+		return new OverriddenExperiment(
+			experimentName,
+			assignedGroup,
+			samplingUnit,
+			subjectId
+		);
+	}
+
+	// Provide an alternate MetricsClient for logged-in experiments to override the
+	// eventIntakeServiceUrl set by config (wgMetricsPlatformExperimentEventIntakeServiceUrl
+	// = '/evt-103e/v2/events?hasty=true' on production) which drops events if everyone experiment
+	// enrollments are not included. DefaultEventSubmitter sets DEFAULT_EVENT_INTAKE_URL to the
+	// eventgate-analytics-external cluster. See https://phabricator.wikimedia.org/T395779.
+	const metricsClient = isLoggedInExperiment ?
 		loggedInExperimentMetricsClient :
 		everyoneExperimentMetricsClient;
 
@@ -101,8 +101,7 @@ function getExperiment( experimentName ) {
 		experimentName,
 		assignedGroup,
 		subjectId,
-		samplingUnit,
-		coordinator
+		samplingUnit
 	);
 }
 
@@ -222,5 +221,9 @@ if ( config.EnableExperimentOverrides || window.QUnit ) {
 }
 
 if ( window.QUnit ) {
-	mw.xLab.Experiment = Experiment;
+	mw.xLab = Object.assign( mw.xLab, {
+		Experiment,
+		UnenrolledExperiment,
+		OverriddenExperiment
+	} );
 }

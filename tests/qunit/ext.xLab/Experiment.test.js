@@ -1,4 +1,4 @@
-const { Experiment } = mw.xLab;
+const { Experiment, UnenrolledExperiment, OverriddenExperiment } = mw.xLab;
 
 QUnit.module( 'ext.xLab/Experiment', QUnit.newMwEnvironment( {
 	beforeEach: function () {
@@ -126,4 +126,103 @@ QUnit.test( 'send() - overriding stream and schema', function ( assert ) {
 			}
 		}
 	] );
+} );
+
+// ---
+
+QUnit.module( 'ext.xLab/UnenrolledExperiment' );
+
+QUnit.test( 'constructor()', ( assert ) => {
+	// Note well that UnenrolledExperiment#constructor() is package-private. Calling it outside xLab
+	// is not supported.
+
+	const e = new UnenrolledExperiment( 'hello_world' );
+
+	assert.propContains(
+		e,
+		{
+			metricsClient: null,
+			name: 'hello_world',
+			assignedGroup: null,
+			subjectId: null,
+			samplingUnit: null,
+			coordinator: 'xLab'
+		}
+	);
+} );
+
+QUnit.test( 'send()', ( assert ) => {
+	const e = new UnenrolledExperiment( 'hello_world' );
+
+	e.send( 'Hello, World!', {
+		experiment: {
+			foo: 'bar',
+			baz: 'qux'
+		}
+	} );
+
+	assert.strictEqual(
+		true, true,
+		'send() shouldn\'t throw an error'
+	);
+} );
+
+// ---
+
+QUnit.module( 'ext.xLab/OverriddenExperiment' );
+
+QUnit.test( 'constructor()', ( assert ) => {
+	// Note well that OverriddenExperiment#constructor() is package-private. Calling it outside xLab
+	// is not supported.
+
+	const e = new OverriddenExperiment(
+		'hello_world',
+		'foo',
+		'overridden',
+		'mw-user'
+	);
+
+	assert.propContains(
+		e,
+		{
+			metricsClient: null,
+			name: 'hello_world',
+			assignedGroup: 'foo',
+			subjectId: 'overridden',
+			samplingUnit: 'mw-user',
+			coordinator: 'forced'
+		}
+	);
+} );
+
+QUnit.test( 'send()', function ( assert ) {
+	const action = 'Hello, World!';
+	const interactionData = {
+		experiment: {
+			foo: 'bar',
+			baz: 'qux'
+		}
+	};
+
+	this.sandbox.mock( console )
+		.expects( 'log' )
+		.once()
+		.withExactArgs(
+			action,
+			JSON.stringify( interactionData, null, 2 )
+		);
+
+	const e = new OverriddenExperiment(
+		'hello_world',
+		'foo',
+		'overridden',
+		'mw-user'
+	);
+
+	e.send( action, interactionData );
+
+	assert.strictEqual(
+		true, true,
+		'send() shouldn\'t throw an error'
+	);
 } );
