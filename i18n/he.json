@@ -4,5 +4,7 @@
 			"Amire80"
 		]
 	},
-	"metricsplatform-desc": "זוהי הרחבת Metrics Platform"
+	"metricsplatform-desc": "זוהי הרחבת Metrics Platform",
+	"metricsplatform-xlab-non-successful-response": "ה־API של xLab החזיר תשובה של כישלון.",
+	"metricsplatform-xlab-api-empty-response-body": "ה־API של xLab החזיר תשובה עם גוף ריק."
 }
