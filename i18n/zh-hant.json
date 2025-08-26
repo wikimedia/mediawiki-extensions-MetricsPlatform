@@ -4,5 +4,7 @@
 			"Kly"
 		]
 	},
-	"metricsplatform-desc": "此為 Metrics Platform 的擴充功能"
+	"metricsplatform-desc": "此為 Metrics Platform 的擴充功能",
+	"metricsplatform-xlab-non-successful-response": "xLab API 回傳了不成功的回應。",
+	"metricsplatform-xlab-api-empty-response-body": "xLab API 回傳了空主體的回應。"
 }
