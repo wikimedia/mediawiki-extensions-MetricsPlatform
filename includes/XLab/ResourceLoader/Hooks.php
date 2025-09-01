@@ -3,6 +3,7 @@
 namespace MediaWiki\Extension\MetricsPlatform\XLab\ResourceLoader;
 
 use MediaWiki\Config\Config;
+use MediaWiki\Extension\MetricsPlatform\Services;
 use MediaWiki\MediaWikiServices;
 use MediaWiki\ResourceLoader as RL;
 
@@ -29,7 +30,10 @@ class Hooks {
 			// EventLogging is loaded and this config variable is defined.
 			'LoggedInExperimentEventIntakeServiceUrl' => $config->get( 'EventLoggingServiceUri' ),
 
+			'InstrumentEventIntakeServiceUrl' => $config->get( 'EventLoggingServiceUri' ),
+
 			'streamConfigs' => self::getStreamConfigs(),
+			'instrumentConfigs' => self::getStreamConfigsForInstruments(),
 		];
 	}
 
@@ -74,5 +78,45 @@ class Hooks {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Gets the configs for instruments configured in xLab.
+	 *
+	 * The configs are marshalled into stream-config-like data structures that are compatible with the Metrics Platform
+	 * JS and PHP clients.
+	 *
+	 * @return array
+	 */
+	private static function getStreamConfigsForInstruments(): array {
+		$streamConfigs = MediaWikiServices::getInstance()->getService( 'EventLogging.StreamConfigs' ) ?? [];
+		$configs = Services::getConfigsFetcher()->getInstrumentConfigs();
+
+		return array_reduce(
+			$configs,
+			static function ( array $result, array $config ) use ( $streamConfigs ) {
+				$instrumentName = $config['slug'];
+				$targetStreamName = $config['stream_name'];
+
+				$result[ $instrumentName ] = [
+					'producers' => [
+						'metrics_platform_client' => [
+							'provide_values' => $config['contextual_attributes'],
+							'stream_name' => $targetStreamName,
+						],
+					],
+					'sample' => $config['sample'],
+
+					// TODO: 'schema_id' => ???
+				];
+
+				if ( isset( $streamConfigs[ $targetStreamName ] ) ) {
+					$result[ $targetStreamName ] = $streamConfigs[ $targetStreamName ];
+				}
+
+				return $result;
+			},
+			[]
+		);
 	}
 }
