@@ -13,7 +13,7 @@ use MediaWiki\MediaWikiServices;
 use Psr\Log\LoggerInterface;
 
 return [
-	'MetricsPlatform.ConfigsFetcher' => static function ( MediaWikiServices $services )  {
+	'MetricsPlatform.ConfigsFetcher' => static function ( MediaWikiServices $services ): InstrumentConfigsFetcher {
 		$options = new ServiceOptions(
 			InstrumentConfigsFetcher::CONSTRUCTOR_OPTIONS,
 			$services->getMainConfig()

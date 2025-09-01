@@ -185,21 +185,21 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 
 		$expectedValue = $value;
 		$expectedValue[0]['sample'] = [
+			'rate' => 1.0,
 			'unit' => 'pageview',
-			'rate' => 1,
 		];
 		$expectedValue[1]['sample'] = [
-			'unit' => 'pageview',
 			'rate' => 0.01,
+			'unit' => 'pageview',
 		];
 
-		$this->assertEquals(
+		$this->assertSame(
 			$expectedValue,
 			$this->fetcher->getInstrumentConfigs(),
 			'If there is a value in the stash, then it is used'
 		);
 
-		$this->assertEquals(
+		$this->assertSame(
 			$value,
 			$this->cache->get( $key ),
 			'The cache has been updated with the value fetched from the stash'
@@ -249,7 +249,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			"end" => $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
 			"sample_rate" => [
-				"default" => 1,
+				"default" => "1",
 				"0.5" => [
 					"bnwiki"
 				],
@@ -271,7 +271,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			"end" => $now->modify( '+1 week' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
 			"sample_rate" => [
-				"default" => 0.5,
+				"default" => "0.5",
 				"0.1" => [
 					"frwiki"
 				],
@@ -295,7 +295,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			"end" => $now->modify( '-2 month' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
 			"sample_rate" => [
-				"default" => 0.2,
+				"default" => "0.2",
 				"0.1" => [
 					"frwiki"
 				],

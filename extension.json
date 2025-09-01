@@ -24,14 +24,6 @@
 		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
 			"value": "http://localhost:80"
 		},
-		"MetricsPlatformEnableStreamConfigsFetching": {
-			"description": "Enable fetching instrumentation configs from xLab during the request. WARNING: This will degrade performance for logged-in users.",
-			"value": false
-		},
-		"MetricsPlatformEnableStreamConfigsMerging": {
-			"description": "Enable merging instrumentation configs fetched from xLab with stream configs provided by the EventStreamConfig extension.",
-			"value": false
-		},
 		"MetricsPlatformEnableExperimentOverrides": {
 			"description": "Enable experiment enrollment overrides via a querystring parameter or a cookie.",
 			"value": false
@@ -50,13 +42,6 @@
 		}
 	},
 	"HookHandlers": {
-		"main": {
-			"factory": "MediaWiki\\Extension\\MetricsPlatform\\Hooks::newInstance",
-			"services": [
-				"MainConfig",
-				"MetricsPlatform.ConfigsFetcher"
-			]
-		},
 		"XLabMain": {
 			"class": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\Hooks",
 			"services": [
@@ -68,7 +53,6 @@
 		}
 	},
 	"Hooks": {
-		"GetStreamConfigs": "main",
 		"BeforeInitialize": "XLabMain"
 	},
 	"ResourceModules": {
