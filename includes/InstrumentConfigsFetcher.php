@@ -279,15 +279,28 @@ class InstrumentConfigsFetcher {
 
 		if ( array_key_exists( 'sample_rate', $config ) ) {
 			$sampleRates = $config['sample_rate'];
-			$sampleConfig['rate'] = $sampleRates['default'];
+			$newRate = $sampleRates['default'];
 			unset( $sampleRates['default'] );
 
 			foreach ( $sampleRates as $rate => $wikis ) {
 				if ( in_array( $dbName, $wikis ) ) {
-					$sampleConfig['rate'] = $rate;
+					$newRate = $rate;
 
 					break;
 				}
+			}
+
+			if ( is_numeric( $newRate ) ) {
+				$sampleConfig['rate'] = floatval( $newRate );
+			} else {
+				$name = $config['name'] ?? $config['slug'];
+
+				$this->logger->warning(
+					'The sample rate for {name} is not numeric. Setting the sample rate to 0.0',
+					[
+						'slug' => $name,
+					]
+				);
 			}
 		}
 

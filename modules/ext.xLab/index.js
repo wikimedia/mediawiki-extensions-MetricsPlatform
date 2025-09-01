@@ -9,7 +9,9 @@ const COOKIE_NAME = 'mpo';
  * @property {boolean} EnableExperimentOverrides
  * @property {string} EveryoneExperimentEventIntakeServiceUrl
  * @property {string} LoggedInExperimentEventIntakeServiceUrl
+ * @property {string} InstrumentEventIntakeServiceUrl
  * @property {Object|false} streamConfigs
+ * @property {Object} instrumentConfigs
  * @ignore
  */
 const config = require( './config.json' );
@@ -17,21 +19,22 @@ const config = require( './config.json' );
 const { newMetricsClient, DefaultEventSubmitter } = require( 'ext.eventLogging.metricsPlatform' );
 
 /**
+ * @param {Object} streamConfigs
  * @param {string} intakeServiceUrl
  * @return {Object}
  * @ignore
  */
-function newMetricsClientInternal( intakeServiceUrl ) {
-	return newMetricsClient(
-		config.streamConfigs,
-		new DefaultEventSubmitter( intakeServiceUrl )
-	);
+function newMetricsClientInternal( streamConfigs, intakeServiceUrl ) {
+	return newMetricsClient( streamConfigs, new DefaultEventSubmitter( intakeServiceUrl ) );
 }
 
-const everyoneExperimentMetricsClient =
-	newMetricsClientInternal( config.EveryoneExperimentEventIntakeServiceUrl );
+const everyoneExperimentMetricsClient = newMetricsClientInternal(
+	config.streamConfigs,
+	config.EveryoneExperimentEventIntakeServiceUrl
+);
 
 const loggedInExperimentMetricsClient = newMetricsClientInternal(
+	config.streamConfigs,
 	config.LoggedInExperimentEventIntakeServiceUrl
 );
 
@@ -125,6 +128,8 @@ function getAssignments() {
 	return userExperiments ? Object.assign( {}, userExperiments.assigned ) : {};
 }
 
+// ---
+
 function setCookieAndReload( value ) {
 	mw.cookie.set( COOKIE_NAME, value );
 
@@ -205,12 +210,33 @@ function clearExperimentOverrides() {
 	setCookieAndReload( null );
 }
 
+// ---
+
+const instrumentMetricsClient = newMetricsClientInternal(
+	config.instrumentConfigs,
+	config.InstrumentEventIntakeServiceUrl
+);
+
+/**
+ * Creates a new {@link Instrument} instance using config fetched from xLab.
+ *
+ * @param {string} instrumentName
+ * @return {Instrument}
+ * @memberof mw.xLab
+ */
+function getInstrument( instrumentName ) {
+	return instrumentMetricsClient.newInstrument( instrumentName );
+}
+
+// ---
+
 /**
  * @namespace mw.xLab
  */
 mw.xLab = {
 	getExperiment,
-	getAssignments
+	getAssignments,
+	getInstrument
 };
 
 // JS overriding experimentation feature

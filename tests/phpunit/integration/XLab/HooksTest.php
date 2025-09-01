@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration\XLab;
 
 use DateTimeImmutable;
 use DateTimeZone;
@@ -49,8 +49,6 @@ class HooksTest
 			'MetricsPlatformEnableExperiments' => true,
 			'MetricsPlatformEnableExperimentOverrides' => true,
 			'MetricsPlatformEnableExperimentConfigsFetching' => true,
-			'MetricsPlatformEnableStreamConfigsFetching' => false,
-			'MetricsPlatformEnableStreamConfigsMerging' => false,
 		] );
 
 		$now = new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) );
