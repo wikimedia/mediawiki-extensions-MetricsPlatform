@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\UserSplitter;
+namespace MediaWiki\Extension\MetricsPlatform\XLab\Enrollment;
 
 use Wikimedia\Assert\Assert;
 

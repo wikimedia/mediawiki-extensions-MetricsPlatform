@@ -1,12 +1,12 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit\XLab;
 
 use DateTimeImmutable;
 use DateTimeZone;
 use Generator;
 use MediaWiki\Config\ServiceOptions;
-use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use MediaWiki\Extension\MetricsPlatform\XLab\ConfigsFetcher;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Json\FormatJson;
 use MediaWiki\Status\Status;
@@ -19,9 +19,9 @@ use Wikimedia\ObjectCache\HashBagOStuff;
 use Wikimedia\Stats\StatsFactory;
 
 /**
- * @covers \MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\ConfigsFetcher
  */
-class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
+class ConfigsFetcherTest extends MediaWikiUnitTestCase {
 	private array $instrumentConfigs;
 	private \BagOStuff $cache;
 	private \BagOStuff $stash;
@@ -29,7 +29,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 	private LoggerInterface $logger;
 	private StatsFactory $statsFactory;
 	private StatusFormatter $statusFormatter;
-	private InstrumentConfigsFetcher $fetcher;
+	private ConfigsFetcher $fetcher;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -41,7 +41,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 		$this->logger = $this->createMock( LoggerInterface::class );
 		$this->statsFactory = StatsFactory::newNull();
 		$this->statusFormatter = $this->createMock( StatusFormatter::class );
-		$this->fetcher = new InstrumentConfigsFetcher(
+		$this->fetcher = new ConfigsFetcher(
 			$this->mockOptions(),
 			$this->cache,
 			$this->stash,

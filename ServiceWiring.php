@@ -2,7 +2,7 @@
 
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use MediaWiki\Extension\MetricsPlatform\XLab\ConfigsFetcher;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EveryoneExperimentsEnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\LoggedInExperimentsEnrollmentAuthority;
@@ -13,16 +13,16 @@ use MediaWiki\MediaWikiServices;
 use Psr\Log\LoggerInterface;
 
 return [
-	'MetricsPlatform.ConfigsFetcher' => static function ( MediaWikiServices $services ): InstrumentConfigsFetcher {
+	'MetricsPlatform.XLab.ConfigsFetcher' => static function ( MediaWikiServices $services ): ConfigsFetcher  {
 		$options = new ServiceOptions(
-			InstrumentConfigsFetcher::CONSTRUCTOR_OPTIONS,
+			ConfigsFetcher::CONSTRUCTOR_OPTIONS,
 			$services->getMainConfig()
 		);
 
 		$cache = $services->getObjectCacheFactory()->getLocalClusterInstance();
 		$stash = $services->getMainObjectStash();
 
-		return new InstrumentConfigsFetcher(
+		return new ConfigsFetcher(
 			$options,
 			$cache,
 			$stash,

@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\XLab\Enrollment;
 
-use MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation;
 use MediaWiki\User\CentralId\CentralIdLookup;
 
 class LoggedInExperimentsEnrollmentAuthority implements EnrollmentAuthorityInterface {

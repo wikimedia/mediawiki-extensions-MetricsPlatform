@@ -105,7 +105,7 @@ class HooksTest
 
 		$hooks = new Hooks(
 			$services->getMainConfig(),
-			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
+			$services->getService( 'MetricsPlatform.XLab.ConfigsFetcher' ),
 			$services->getService( 'MetricsPlatform.XLab.EnrollmentAuthority' ),
 			$services->getService( 'MetricsPlatform.XLab.ExperimentManager' ),
 			$this->logger
@@ -363,7 +363,7 @@ class HooksTest
 
 		$hooks = new Hooks(
 			$services->getMainConfig(),
-			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
+			$services->getService( 'MetricsPlatform.XLab.ConfigsFetcher' ),
 			$services->getService( 'MetricsPlatform.XLab.EnrollmentAuthority' ),
 			$services->getService( 'MetricsPlatform.XLab.ExperimentManager' ),
 			$this->logger

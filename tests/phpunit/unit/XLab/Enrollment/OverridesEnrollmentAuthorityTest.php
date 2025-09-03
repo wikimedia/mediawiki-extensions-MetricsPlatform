@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit\XLab\Enrollment;
 
 use Generator;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentRequest;

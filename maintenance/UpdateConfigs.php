@@ -4,7 +4,7 @@ namespace MediaWiki\Extension\MetricsPlatform\Maintenance;
 
 // @codeCoverageIgnoreStart
 use MediaWiki\Config\Config;
-use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use MediaWiki\Extension\MetricsPlatform\XLab\ConfigsFetcher;
 use MediaWiki\Maintenance\Maintenance;
 
 $IP = getenv( 'MW_INSTALL_PATH' );
@@ -35,8 +35,8 @@ contactable from this host.
 MSG );
 		}
 
-		/** @var InstrumentConfigsFetcher $configsFetcher */
-		$configsFetcher = $this->getServiceContainer()->getService( 'MetricsPlatform.ConfigsFetcher' );
+		/** @var ConfigsFetcher $configsFetcher */
+		$configsFetcher = $this->getServiceContainer()->getService( 'MetricsPlatform.XLab.ConfigsFetcher' );
 
 		$this->output( 'Updating instrument configs...' );
 		$configsFetcher->updateInstrumentConfigs();

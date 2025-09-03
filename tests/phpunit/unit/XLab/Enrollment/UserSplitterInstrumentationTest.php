@@ -1,14 +1,14 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit\XLab\Enrollment;
 
 use Generator;
-use MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation;
+use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\UserSplitterInstrumentation;
 use MediaWikiUnitTestCase;
 use Wikimedia\Assert\ParameterAssertionException;
 
 /**
- * @covers \MediaWiki\Extension\MetricsPlatform\UserSplitter\UserSplitterInstrumentation
+ * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\UserSplitterInstrumentation
  */
 class UserSplitterInstrumentationTest extends MediaWikiUnitTestCase {
 	/**

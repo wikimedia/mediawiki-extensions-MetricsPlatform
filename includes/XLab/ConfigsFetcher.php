@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform;
+namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
 use DateMalformedStringException;
 use DateTimeImmutable;
@@ -15,12 +15,12 @@ use Wikimedia\LightweightObjectStore\ExpirationAwareness;
 use Wikimedia\ObjectCache\BagOStuff;
 use Wikimedia\Stats\StatsFactory;
 
-class InstrumentConfigsFetcher {
+class ConfigsFetcher {
 	private const VERSION = 1;
 	private const HTTP_TIMEOUT = 1;
 	private const INSTRUMENT = 1;
 	private const EXPERIMENT = 2;
-	private const USER_AGENT = 'InstrumentConfigsFetcher/0.0.1 (#experiment-platform)';
+	private const USER_AGENT = 'ConfigsFetcher/0.0.1 (#experiment-platform)';
 	public const XLAB_API_INSTRUMENTS_ENDPOINT = "/api/v1/instruments";
 	public const XLAB_API_EXPERIMENTS_ENDPOINT = "/api/v1/experiments?format=config&authority=mediawiki";
 
@@ -89,8 +89,8 @@ class InstrumentConfigsFetcher {
 		//
 		// This situation can occur in two very-different states:
 		//
-		// 1. The stash is cold because InstrumentConfigsFetcher::VERSION has changed (this includes an initial
-		//    deployment where ::VERSION changes from 0 to 1, effectively)
+		// 1. The stash is cold because ConfigsFetcher::VERSION has changed (this includes an initial deployment where
+		//    ::VERSION changes from 0 to 1, effectively)
 		// 2. An old value was evicted from the stash due to pressure and the stash hasn't been updated yet
 		$configs = [];
 
@@ -385,3 +385,5 @@ class InstrumentConfigsFetcher {
 		return $labels;
 	}
 }
+
+class_alias( ConfigsFetcher::class, 'MediaWiki\\Extension\\MetricsPlatform\\InstrumentConfigsFetcher' );

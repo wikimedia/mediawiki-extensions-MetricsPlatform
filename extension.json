@@ -20,6 +20,10 @@
 	"AutoloadNamespaces": {
 		"MediaWiki\\Extension\\MetricsPlatform\\": "includes/"
 	},
+	"AutoloadClasses": {
+		"MediaWiki\\Extension\\MetricsPlatform\\XLab\\ConfigsFetcher": "includes/XLab/ConfigsFetcher.php",
+		"MediaWiki\\Extension\\MetricsPlatform\\InstrumentConfigsFetcher": "includes/XLab/ConfigsFetcher.php"
+	},
 	"config": {
 		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
 			"value": "http://localhost:80"
@@ -60,7 +64,7 @@
 			"class": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\Hooks",
 			"services": [
 				"MainConfig",
-				"MetricsPlatform.ConfigsFetcher",
+				"MetricsPlatform.XLab.ConfigsFetcher",
 				"MetricsPlatform.XLab.EnrollmentAuthority",
 				"MetricsPlatform.XLab.ExperimentManager",
 				"MetricsPlatform.Logger"

@@ -6,7 +6,6 @@ use MediaWiki\Api\Hook\APIAfterExecuteHook;
 use MediaWiki\Auth\Hook\AuthPreserveQueryParamsHook;
 use MediaWiki\Config\Config;
 use MediaWiki\Context\RequestContext;
-use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentRequest;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder;
@@ -35,7 +34,7 @@ class Hooks implements
 
 	public function __construct(
 		private readonly Config $config,
-		private readonly InstrumentConfigsFetcher $configsFetcher,
+		private readonly ConfigsFetcher $configsFetcher,
 		private readonly EnrollmentAuthority $enrollmentAuthority,
 		private readonly ExperimentManager $experimentManager,
 		private readonly LoggerInterface $logger,
@@ -49,6 +48,11 @@ class Hooks implements
 			$config->has( 'MetricsPlatformEnableExperimentConfigsFetching' ),
 			'$config',
 			'Required config "MetricsPlatformEnableExperimentConfigsFetching" missing.'
+		);
+		Assert::parameter(
+			$config->has( 'MetricsPlatformAuthPreserveQueryParamsExperiments' ),
+			'$config',
+			'Required config "MetricsPlatformAuthPreserveQueryParamsExperiments" missing.'
 		);
 	}
 
@@ -144,8 +148,7 @@ class Hooks implements
 
 		$activeLoggedInExperiments = [];
 
-		// Optimization: Only get experiment configs from the InstrumentConfigsFetcher's backing store if the user is
-		// registered.
+		// Optimization: Only get experiment configs from the ConfigsFetcher's backing store if the user is registered.
 		if ( $user->isRegistered() ) {
 			if ( $this->config->get( 'MetricsPlatformEnableExperimentConfigsFetching' ) ) {
 				$this->configsFetcher->updateExperimentConfigs();

@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\MetricsPlatform\Tests\Integration\XLab\ResourceLoa
 use Generator;
 use MediaWiki\Config\Config;
 use MediaWiki\Config\HashConfig;
-use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
+use MediaWiki\Extension\MetricsPlatform\XLab\ConfigsFetcher;
 use MediaWiki\Extension\MetricsPlatform\XLab\ResourceLoader\Hooks;
 use MediaWiki\ResourceLoader as RL;
 use MediaWikiIntegrationTestCase;
@@ -14,14 +14,14 @@ use MediaWikiIntegrationTestCase;
  * @covers \MediaWiki\Extension\MetricsPlatform\XLab\ResourceLoader\Hooks
  */
 class HooksTest extends MediaWikiIntegrationTestCase {
-	private InstrumentConfigsFetcher $configsFetcher;
+	private ConfigsFetcher $configsFetcher;
 	private RL\Context $context;
 	private Config $config;
 
 	public function setUp(): void {
-		$this->configsFetcher = $this->createMock( InstrumentConfigsFetcher::class );
+		$this->configsFetcher = $this->createMock( ConfigsFetcher::class );
 
-		$this->setService( 'MetricsPlatform.ConfigsFetcher', $this->configsFetcher );
+		$this->setService( 'MetricsPlatform.XLab.ConfigsFetcher', $this->configsFetcher );
 
 		$this->context = RL\Context::newDummyContext();
 		$this->config = new HashConfig( [

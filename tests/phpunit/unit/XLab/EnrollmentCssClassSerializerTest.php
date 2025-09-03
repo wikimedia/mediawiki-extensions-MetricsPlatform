@@ -1,6 +1,6 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
+namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit\XLab;
 
 use MediaWiki\Extension\MetricsPlatform\XLab\EnrollmentCssClassSerializer;
 use MediaWikiUnitTestCase;
