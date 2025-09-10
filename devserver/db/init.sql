@@ -17,19 +17,19 @@ CREATE TABLE IF NOT EXISTS instruments (
 	utc_start_dt DATETIME NOT NULL,
 	utc_end_dt DATETIME NOT NULL,
 	task VARCHAR(1000) NOT NULL,
-	compliance_requirements SET('legal', 'gdpr') NOT NULL,
+	risk_level VARCHAR(255) NOT NULL,
 	sample_unit VARCHAR(255) NOT NULL,
-	sample_rate JSON NOT NULL,
+	sample_rate JSON NOT NULL,  -- JSON field for sample rates
 	environments SET('development', 'staging', 'production', 'external') NOT NULL,
 	security_legal_review VARCHAR(1000) NOT NULL,
 	status BOOLEAN DEFAULT FALSE,
 	was_activated BOOLEAN DEFAULT FALSE,
-	stream_name VARCHAR(255),
-	schema_title VARCHAR(255),
-	schema_type VARCHAR(255),
+	stream_name VARCHAR(255),   -- Made optional
+	schema_title VARCHAR(255),  -- Made optional
+	schema_type VARCHAR(255),   -- Made optional
 	email_address VARCHAR(255) NOT NULL,
 	type VARCHAR(255) NOT NULL,
-	variants JSON DEFAULT NULL,
+	variants JSON DEFAULT NULL, -- New column to store variants as JSON
 	PRIMARY KEY (id)
 );
 
@@ -87,3 +87,19 @@ INSERT INTO contextual_attributes (contextual_attribute_name) VALUES
 	('performer_edit_count'),
 	('performer_edit_count_bucket'),
 	('performer_registration_dt');
+
+INSERT INTO okrs (name, description) VALUES
+	('FY24/25 SDS 2.4', 'FY24/25 SDS 2.4'),
+	('FY24/25 WE 1.7', 'FY24/25 WE 1.7'),
+	('FY25/26 PES 1.1', 'FY25/26 PES 1.1'),
+	('FY25/26 SDS 2.1', 'FY25/26 SDS 2.1'),
+	('FY25/26 WE 1.1', 'FY25/26 WE 1.1'),
+	('FY25/26 WE 1.2', 'FY25/26 WE 1.2'),
+	('FY25/26 WE 1.4', 'FY25/26 WE 1.4'),
+	('FY25/26 WE 1.7', 'FY25/26 WE 1.7'),
+	('FY25/26 WE 2.1', 'FY25/26 WE 2.1'),
+	('FY25/26 WE 2.2', 'FY25/26 WE 2.2'),
+	('FY25/26 WE 3.1', 'FY25/26 WE 3.1'),
+	('FY25/26 WE 3.2', 'FY25/26 WE 3.2'),
+	('FY25/26 WE 3.3', 'FY25/26 WE 3.3'),
+	('FY25/26 WE 3.6', 'FY25/26 WE 3.6');
