@@ -18,16 +18,11 @@ class Hooks implements
 		'MetricsPlatformEnableExperimentConfigsFetching',
 	];
 
-	private Config $config;
-	private InstrumentConfigsFetcher $configsFetcher;
-	private EnrollmentAuthority $enrollmentAuthority;
-	private ExperimentManager $experimentManager;
-
 	public function __construct(
-		Config $config,
-		InstrumentConfigsFetcher $configsFetcher,
-		EnrollmentAuthority $enrollmentAuthority,
-		ExperimentManager $experimentManager
+		private readonly Config $config,
+		private readonly InstrumentConfigsFetcher $configsFetcher,
+		private readonly EnrollmentAuthority $enrollmentAuthority,
+		private readonly ExperimentManager $experimentManager,
 	) {
 		Assert::parameter(
 			$config->has( 'MetricsPlatformEnableExperiments' ),
@@ -39,11 +34,6 @@ class Hooks implements
 			'$config',
 			'Required config "MetricsPlatformEnableExperimentConfigsFetching" missing.'
 		);
-
-		$this->config = $config;
-		$this->enrollmentAuthority = $enrollmentAuthority;
-		$this->configsFetcher = $configsFetcher;
-		$this->experimentManager = $experimentManager;
 	}
 
 	/**

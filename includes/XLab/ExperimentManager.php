@@ -7,13 +7,12 @@ use Psr\Log\LoggerInterface;
 use Wikimedia\MetricsPlatform\MetricsClient;
 
 class ExperimentManager {
-	private LoggerInterface $logger;
-	private MetricsClient $metricsPlatformClient;
 	private array $enrollmentResult;
 
-	public function __construct( LoggerInterface $logger, MetricsClient $metricsPlatformClient ) {
-		$this->logger = $logger;
-		$this->metricsPlatformClient = $metricsPlatformClient;
+	public function __construct(
+		private readonly LoggerInterface $logger,
+		private readonly MetricsClient $metricsPlatformClient,
+	) {
 		$this->enrollmentResult = [];
 	}
 

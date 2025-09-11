@@ -37,9 +37,6 @@ class Hooks implements
 	/** @var string */
 	public const PRODUCT_METRICS_DESTINATION_EVENT_SERVICE = 'eventgate-analytics-external';
 
-	private InstrumentConfigsFetcher $configsFetcher;
-	private ServiceOptions $options;
-
 	public static function newInstance(
 		Config $config,
 		InstrumentConfigsFetcher $configsFetcher
@@ -51,12 +48,10 @@ class Hooks implements
 	}
 
 	public function __construct(
-		ServiceOptions $options,
-		InstrumentConfigsFetcher $configsFetcher
+		private readonly ServiceOptions $options,
+		private readonly InstrumentConfigsFetcher $configsFetcher,
 	) {
 		$options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
-		$this->configsFetcher = $configsFetcher;
-		$this->options = $options;
 	}
 
 	/**

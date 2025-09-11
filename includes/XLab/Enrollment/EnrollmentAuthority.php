@@ -14,18 +14,11 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab\Enrollment;
  * 3. {@link OverridesEnrollmentAuthority::enrollUser()}
  */
 class EnrollmentAuthority implements EnrollmentAuthorityInterface {
-	private EveryoneExperimentsEnrollmentAuthority $everyoneExperimentsEnrollmentAuthority;
-	private LoggedInExperimentsEnrollmentAuthority $loggedInExperimentsEnrollmentAuthority;
-	private OverridesEnrollmentAuthority $overridesEnrollmentAuthority;
-
 	public function __construct(
-		EveryoneExperimentsEnrollmentAuthority $everyoneExperimentsEnrollmentAuthority,
-		LoggedInExperimentsEnrollmentAuthority $loggedInExperimentsEnrollmentAuthority,
-		OverridesEnrollmentAuthority $overridesEnrollmentAuthority
+		private readonly EveryoneExperimentsEnrollmentAuthority $everyoneExperimentsEnrollmentAuthority,
+		private readonly LoggedInExperimentsEnrollmentAuthority $loggedInExperimentsEnrollmentAuthority,
+		private readonly OverridesEnrollmentAuthority $overridesEnrollmentAuthority,
 	) {
-		$this->everyoneExperimentsEnrollmentAuthority = $everyoneExperimentsEnrollmentAuthority;
-		$this->loggedInExperimentsEnrollmentAuthority = $loggedInExperimentsEnrollmentAuthority;
-		$this->overridesEnrollmentAuthority = $overridesEnrollmentAuthority;
 	}
 
 	public function enrollUser( EnrollmentRequest $request, EnrollmentResultBuilder $result ): void {

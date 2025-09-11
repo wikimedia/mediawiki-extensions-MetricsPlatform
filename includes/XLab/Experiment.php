@@ -8,22 +8,10 @@ class Experiment implements ExperimentInterface {
 	private const BASE_STREAM = 'product_metrics.web_base';
 	private const BASE_SCHEMAID = '/analytics/product_metrics/web/base/1.4.2';
 
-	/** @var MetricsClient */
-	private $metricsClient;
-
-	/** @var array|null */
-	private $experimentConfig;
-
-	/**
-	 * @param MetricsClient $metricsClient
-	 * @param array|null $experimentConfig
-	 */
 	public function __construct(
-		MetricsClient $metricsClient,
-		?array $experimentConfig = null
+		private readonly MetricsClient $metricsClient,
+		private readonly ?array $experimentConfig = null,
 	) {
-		$this->metricsClient = $metricsClient;
-		$this->experimentConfig = $experimentConfig;
 	}
 
 	/**

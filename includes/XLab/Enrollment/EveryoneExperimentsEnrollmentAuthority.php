@@ -24,10 +24,9 @@ class EveryoneExperimentsEnrollmentAuthority implements EnrollmentAuthorityInter
 	 */
 	private const SUBJECT_ID = 'awaiting';
 
-	private LoggerInterface $logger;
-
-	public function __construct( LoggerInterface $logger ) {
-		$this->logger = $logger;
+	public function __construct(
+		private readonly LoggerInterface $logger,
+	) {
 	}
 
 	public function enrollUser( EnrollmentRequest $request, EnrollmentResultBuilder $result ): void {

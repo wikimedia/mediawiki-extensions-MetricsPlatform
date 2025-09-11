@@ -8,11 +8,11 @@ use MediaWiki\User\CentralId\CentralIdLookup;
 class LoggedInExperimentsEnrollmentAuthority implements EnrollmentAuthorityInterface {
 	private const SAMPLING_UNIT = 'mw-user';
 
-	private CentralIdLookup $centralIdLookup;
-	private UserSplitterInstrumentation $userSplitterInstrumentation;
+	private readonly UserSplitterInstrumentation $userSplitterInstrumentation;
 
-	public function __construct( CentralIdLookup $centralIdLookup ) {
-		$this->centralIdLookup = $centralIdLookup;
+	public function __construct(
+		private readonly CentralIdLookup $centralIdLookup,
+	) {
 		$this->userSplitterInstrumentation = new UserSplitterInstrumentation();
 	}
 

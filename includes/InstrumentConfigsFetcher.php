@@ -33,31 +33,17 @@ class InstrumentConfigsFetcher {
 		'MetricsPlatformInstrumentConfiguratorBaseUrl',
 		MainConfigNames::DBname,
 	];
-	private ServiceOptions $options;
-	private BagOStuff $cache;
-	private BagOStuff $stash;
-	private HttpRequestFactory $httpRequestFactory;
-	private LoggerInterface $logger;
-	private StatsFactory $statsFactory;
-	private StatusFormatter $statusFormatter;
 
 	public function __construct(
-		ServiceOptions $options,
-		BagOStuff $cache,
-		BagOStuff $stash,
-		HttpRequestFactory $httpRequestFactory,
-		LoggerInterface $logger,
-		StatsFactory $statsFactory,
-		StatusFormatter $statusFormatter
+		private readonly ServiceOptions $options,
+		private readonly BagOStuff $cache,
+		private readonly BagOStuff $stash,
+		private readonly HttpRequestFactory $httpRequestFactory,
+		private readonly LoggerInterface $logger,
+		private readonly StatsFactory $statsFactory,
+		private readonly StatusFormatter $statusFormatter,
 	) {
-		$this->options = $options;
-		$this->options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
-		$this->cache = $cache;
-		$this->stash = $stash;
-		$this->httpRequestFactory = $httpRequestFactory;
-		$this->logger = $logger;
-		$this->statsFactory = $statsFactory;
-		$this->statusFormatter = $statusFormatter;
+		$options->assertRequiredOptions( self::CONSTRUCTOR_OPTIONS );
 	}
 
 	/**
