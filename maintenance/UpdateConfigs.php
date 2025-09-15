@@ -14,7 +14,6 @@ if ( $IP === false ) {
 require_once "$IP/maintenance/Maintenance.php";
 // @codeCoverageIgnoreEnd
 
-// @phpcs
 class UpdateConfigs extends Maintenance {
 	public function __construct() {
 		parent::__construct();
