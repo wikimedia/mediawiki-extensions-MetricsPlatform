@@ -62,7 +62,8 @@ return [
 	'MetricsPlatform.XLab.ExperimentManager' => static function ( MediaWikiServices $services ): ExperimentManager {
 		return new ExperimentManager(
 			$services->getService( 'MetricsPlatform.Logger' ),
-			EventLogging::getMetricsPlatformClient()
+			EventLogging::getMetricsPlatformClient(),
+			$services->getStatsFactory()
 		);
 	}
 ];

@@ -8,6 +8,7 @@ use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
 use MediaWikiUnitTestCase;
 use Psr\Log\LoggerInterface;
 use Wikimedia\MetricsPlatform\MetricsClient;
+use Wikimedia\Stats\StatsFactory;
 
 /**
  * @covers \MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager
@@ -16,13 +17,19 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 	private LoggerInterface $logger;
 	private MetricsClient $metricsPlatformClient;
 	private ExperimentManager $experimentManager;
+	private StatsFactory $statsFactory;
 
 	public function setUp(): void {
 		parent::setUp();
 
 		$this->logger = $this->createMock( LoggerInterface::class );
 		$this->metricsPlatformClient = $this->createMock( MetricsClient::class );
-		$this->experimentManager = new ExperimentManager( $this->logger, $this->metricsPlatformClient );
+		$this->statsFactory = StatsFactory::newNull();
+		$this->experimentManager = new ExperimentManager(
+			$this->logger,
+			$this->metricsPlatformClient,
+			$this->statsFactory
+		);
 
 		$enrollmentResult = new EnrollmentResultBuilder();
 
@@ -45,6 +52,7 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 	public function testGetExperiment(): void {
 		$expectedExperiment = new Experiment(
 			$this->metricsPlatformClient,
+			$this->statsFactory,
 			[
 				'enrolled' => 'dessert',
 				'assigned' => 'control',
@@ -61,6 +69,7 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 	public function testGetOverriddenExperiment(): void {
 		$expectedExperiment = new Experiment(
 			$this->metricsPlatformClient,
+			$this->statsFactory,
 			[
 				'enrolled' => 'main-course',
 				'assigned' => 'control',
@@ -79,16 +88,16 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 			->method( 'info' )
 			->with( 'The foo experiment is not registered. Is the experiment configured and running?' );
 
-		$expectedExperiment = new Experiment( $this->metricsPlatformClient, [] );
+		$expectedExperiment = new Experiment( $this->metricsPlatformClient, $this->statsFactory, [] );
 		$actualExperiment = $this->experimentManager->getExperiment( 'foo' );
 
 		$this->assertEquals( $expectedExperiment, $actualExperiment );
 	}
 
 	public function testGetExperimentUninitialized(): void {
-		$experimentManager = new ExperimentManager( $this->logger, $this->metricsPlatformClient );
+		$experimentManager = new ExperimentManager( $this->logger, $this->metricsPlatformClient, $this->statsFactory );
 
-		$expectedExperiment = new Experiment( $this->metricsPlatformClient, [] );
+		$expectedExperiment = new Experiment( $this->metricsPlatformClient, $this->statsFactory, [] );
 		$actualExperiment = $experimentManager->getExperiment( 'foo' );
 
 		$this->assertEquals( $expectedExperiment, $actualExperiment );
