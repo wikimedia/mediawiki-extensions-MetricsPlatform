@@ -5,15 +5,19 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 use DomainException;
 use Psr\Log\LoggerInterface;
 use Wikimedia\MetricsPlatform\MetricsClient;
+use Wikimedia\Stats\StatsFactory;
 
 class ExperimentManager {
 	private array $enrollmentResult;
+	private StatsFactory $statsFactory;
 
 	public function __construct(
 		private readonly LoggerInterface $logger,
 		private readonly MetricsClient $metricsPlatformClient,
+		StatsFactory $statsFactory
 	) {
 		$this->enrollmentResult = [];
+		$this->statsFactory = $statsFactory;
 	}
 
 	/**
@@ -51,7 +55,7 @@ class ExperimentManager {
 			$experimentConfig = $this->getCurrentUserExperiment( $experimentName );
 		}
 
-		return new Experiment( $this->metricsPlatformClient, $experimentConfig );
+		return new Experiment( $this->metricsPlatformClient, $this->statsFactory, $experimentConfig );
 	}
 
 	/**

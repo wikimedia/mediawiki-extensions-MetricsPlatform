@@ -3,15 +3,19 @@
 namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
 use Wikimedia\MetricsPlatform\MetricsClient;
+use Wikimedia\Stats\StatsFactory;
 
 class Experiment implements ExperimentInterface {
 	private const BASE_STREAM = 'product_metrics.web_base';
 	private const BASE_SCHEMAID = '/analytics/product_metrics/web/base/1.4.2';
+	private StatsFactory $statsFactory;
 
 	public function __construct(
 		private readonly MetricsClient $metricsClient,
-		private readonly ?array $experimentConfig = null,
+		StatsFactory $statsFactory,
+		private readonly ?array $experimentConfig = null
 	) {
+		$this->statsFactory = $statsFactory;
 	}
 
 	/**
@@ -44,6 +48,9 @@ class Experiment implements ExperimentInterface {
 				$action,
 				$interactionData
 			);
+			if ( $this->experimentConfig !== null ) {
+				$this->incrementSentEventsTotal( $this->experimentConfig['enrolled'] );
+			}
 		}
 	}
 
@@ -63,5 +70,17 @@ class Experiment implements ExperimentInterface {
 	 */
 	private function isEnrolled(): bool {
 		return $this->experimentConfig && $this->getAssignedGroup() !== null;
+	}
+
+	/**
+	 * Increment experiment send event counts.
+	 *
+	 * @param string $experimentName
+	 */
+	private function incrementSentEventsTotal( string $experimentName ): void {
+		$this->statsFactory->withComponent( 'MetricsPlatform' )
+			->getCounter( 'experiment_events_sent_total' )
+			->setLabel( 'experiment', $experimentName )
+			->increment();
 	}
 }

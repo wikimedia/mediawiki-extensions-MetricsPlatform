@@ -5,6 +5,7 @@ namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
 use MediaWiki\Extension\MetricsPlatform\XLab\Experiment;
 use MediaWikiUnitTestCase;
 use Wikimedia\MetricsPlatform\MetricsClient;
+use Wikimedia\Stats\StatsFactory;
 
 /**
  * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Experiment
@@ -40,11 +41,15 @@ class ExperimentTest extends MediaWikiUnitTestCase {
 		'action_context' => 'test_action_context',
 	];
 
+	private StatsFactory $statsFactory;
+
 	public function setUp(): void {
 		parent::setUp();
 		$this->mockMetricsClient = $this->createMock( MetricsClient::class );
+		$this->statsFactory = StatsFactory::newNull();
 		$this->experiment = new Experiment(
 			$this->mockMetricsClient,
+			$this->statsFactory,
 			$this->experimentConfig
 		);
 	}
@@ -57,6 +62,7 @@ class ExperimentTest extends MediaWikiUnitTestCase {
 	public function testGetAssignedGroupWithNoExperimentConfig() {
 		$experiment = new Experiment(
 			$this->mockMetricsClient,
+			$this->statsFactory,
 			[]
 		);
 		$group = $experiment->getAssignedGroup();
@@ -110,7 +116,7 @@ class ExperimentTest extends MediaWikiUnitTestCase {
 	}
 
 	public function testSendArgumentsWithMissingExperimentConfig() {
-		$experiment = new Experiment( $this->mockMetricsClient );
+		$experiment = new Experiment( $this->mockMetricsClient, $this->statsFactory );
 
 		$this->mockMetricsClient
 			->expects( $this->never() )
