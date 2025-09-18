@@ -32,8 +32,8 @@ class LoggedInExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 
 		$this->centralIdLookup = $this->createMock( CentralIdLookup::class );
 		$this->centralIdLookup->expects( $this->any() )
-			->method( 'centralIdFromLocalUser' )
-			->with( $this->user )
+			->method( 'centralIdFromName' )
+			->with( $this->user->getName() )
 			->willReturn( 2 );
 
 		$this->result = $this->createMock( EnrollmentResultBuilder::class );
@@ -166,8 +166,8 @@ class LoggedInExperimentsEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 	public function testNoCentralID(): void {
 		$centralIdLookup = $this->createMock( CentralIdLookup::class );
 		$centralIdLookup->expects( $this->once() )
-			->method( 'centralIdFromLocalUser' )
-			->with( $this->user )
+			->method( 'centralIdFromName' )
+			->with( $this->user->getName() )
 			->willReturn( 0 );
 
 		$this->request->expects( $this->never() )

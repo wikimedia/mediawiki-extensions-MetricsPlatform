@@ -169,14 +169,15 @@ class HooksTest
 
 		// The user is registered (they have a local ID > 0) and they have a central user ID > 0
 		// as well.
-		$user = new User();
-		$user->setName( 'TestUser' );
-		$user->setId( 123 );
+		$user = $this->createMock( User::class );
+		$user->method( 'getName' )->willReturn( 'TestUser' );
+		$user->method( 'getId' )->willReturn( 123 );
+		$user->method( 'isRegistered' )->willReturn( true );
 		$this->context->setUser( $user );
 
 		$this->centralIdLookup->expects( $this->once() )
-			->method( 'centralIdFromLocalUser' )
-			->with( $user )
+			->method( 'centralIdFromName' )
+			->with( 'TestUser' )
 			->willReturn( 321 );
 
 		$actual = $this->onBeforeInitialize();
@@ -267,14 +268,15 @@ class HooksTest
 	public function testOverriddenOutSampleLoggedInExperiment(): void {
 		// The user is registered (they have a local ID > 0) and they have a central user ID > 0
 		// as well.
-		$user = new User();
-		$user->setName( 'TestUser' );
-		$user->setId( 123 );
+		$user = $this->createMock( User::class );
+		$user->method( 'getName' )->willReturn( 'TestUser' );
+		$user->method( 'getId' )->willReturn( 123 );
+		$user->method( 'isRegistered' )->willReturn( true );
 		$this->context->setUser( $user );
 
 		$this->centralIdLookup->expects( $this->once() )
-			->method( 'centralIdFromLocalUser' )
-			->with( $user )
+			->method( 'centralIdFromName' )
+			->with( 'TestUser' )
 			->willReturn( 321 );
 
 		$this->context->getRequest()->setCookie(

@@ -23,7 +23,9 @@ class LoggedInExperimentsEnrollmentAuthority implements EnrollmentAuthorityInter
 			return;
 		}
 
-		$centralUserID = $this->centralIdLookup->centralIdFromLocalUser( $user );
+		// CentralIdLookup::centralIdFromName does not require to local account to already be attached to the central
+		// account, which is often not yet the case, so it should reliably return the correct central id.
+		$centralUserID = $this->centralIdLookup->centralIdFromName( $user->getName() );
 
 		if ( !$centralUserID ) {
 			return;
