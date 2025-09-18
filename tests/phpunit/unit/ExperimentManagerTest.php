@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\Tests\Unit;
 
-use DomainException;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder;
 use MediaWiki\Extension\MetricsPlatform\XLab\Experiment;
 use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
@@ -38,20 +37,6 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 		$enrollmentResult->addAssignment(
 			'dessert',
 			'control'
-		);
-
-		$this->experimentManager->initialize( $enrollmentResult->build() );
-	}
-
-	public function testInitializeThrows(): void {
-		$this->expectException( DomainException::class );
-		$this->expectExceptionMessage( 'ExperimentManager has already been initialized.' );
-
-		$enrollmentResult = new EnrollmentResultBuilder();
-		$enrollmentResult->addExperiment( 'my-awesome-experiment', 'asiwyfa', 'mw-user' );
-		$enrollmentResult->addAssignment(
-			'my-awesome-experiment',
-			'treatment'
 		);
 
 		$this->experimentManager->initialize( $enrollmentResult->build() );

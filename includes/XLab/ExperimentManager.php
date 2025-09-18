@@ -2,7 +2,6 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
-use DomainException;
 use Psr\Log\LoggerInterface;
 use Wikimedia\MetricsPlatform\MetricsClient;
 
@@ -17,19 +16,14 @@ class ExperimentManager {
 	}
 
 	/**
-	 * This method SHOULD NOT be called by code outside of the MetricsPlatform extension (or the xLab codebase).
+	 * This method SHOULD NOT be called by code outside the MetricsPlatform extension (or the xLab codebase). As an
+	 * interim solution GrowthExperiments uses it on account creation until T405074 is resolved.
 	 *
-	 * @internal
+	 * Don't use this unless you've spoken with Experiment Platform team.
 	 *
 	 * @param array $enrollmentResult
-	 * @throws DomainException If this instance of `ExperimentManager` has already been initialized with one or more
-	 *  experiment enrollments
 	 */
 	public function initialize( array $enrollmentResult ): void {
-		if ( $this->enrollmentResult ) {
-			throw new DomainException( 'ExperimentManager has already been initialized.' );
-		}
-
 		$this->enrollmentResult = $enrollmentResult;
 	}
 
