@@ -4,6 +4,8 @@ const { Experiment, UnenrolledExperiment, OverriddenExperiment } = require( './E
 
 const COOKIE_NAME = 'mpo';
 
+require( './Experiments.js' );
+
 /**
  * @type {Object}
  * @property {boolean} EnableExperimentOverrides

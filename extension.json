@@ -39,6 +39,14 @@
 		"MetricsPlatformExperimentEventIntakeServiceUrl": {
 			"description": "The URL of the EventGate experiment-related event intake service.",
 			"value": "http://localhost:8192/v1/events?hasty=true"
+		},
+		"MetricsPlatformEnableHeadPixel": {
+			"description": "Enable the head pixel beacon. This is a JavaScript module that emits a page loaded event from the header. This is useful for tracking page load times.",
+			"value": false
+		},
+		"MetricsPlatformHeadPixelMetric": {
+			"description": "The name of the head pixel metric. This is used to emit the initial page load metric to Prometheus.",
+			"value": "stats.mediawiki_page_load_head_pixel_total"
 		}
 	},
 	"HookHandlers": {
@@ -50,10 +58,17 @@
 				"MetricsPlatform.XLab.EnrollmentAuthority",
 				"MetricsPlatform.XLab.ExperimentManager"
 			]
+		},
+		"XLabPageBeacon": {
+			"class": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\PageBeacon",
+			"services": [
+				"MainConfig"
+			]
 		}
 	},
 	"Hooks": {
-		"BeforeInitialize": "XLabMain"
+		"BeforeInitialize": "XLabMain",
+		"BeforePageDisplay": "XLabPageBeacon"
 	},
 	"ResourceModules": {
 		"ext.xLab": {
@@ -65,7 +80,8 @@
 				{
 					"name": "config.json",
 					"callback": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\ResourceLoader\\Hooks::getConfigForXLabModule"
-				}
+				},
+				"Experiments.js"
 			],
 			"dependencies": [
 				"ext.eventLogging"
