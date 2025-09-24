@@ -3,7 +3,6 @@
 const { Experiment, UnenrolledExperiment, OverriddenExperiment } = require( './Experiment.js' );
 
 const COOKIE_NAME = 'mpo';
-
 /**
  * @type {Object}
  * @property {boolean} EnableExperimentOverrides
@@ -253,3 +252,5 @@ if ( window.QUnit ) {
 		OverriddenExperiment
 	} );
 }
+
+require( './Experiments.js' );

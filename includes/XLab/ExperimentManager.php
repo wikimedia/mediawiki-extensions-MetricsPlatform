@@ -5,7 +5,7 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 use Psr\Log\LoggerInterface;
 use Wikimedia\MetricsPlatform\MetricsClient;
 
-class ExperimentManager {
+class ExperimentManager implements ExperimentManagerInterface {
 	private array $enrollmentResult;
 
 	public function __construct(

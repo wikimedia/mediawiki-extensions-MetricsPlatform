@@ -43,6 +43,14 @@
 		"MetricsPlatformAuthPreserveQueryParamsExperiments": {
 			"description": "List of experiment names to use in the AuthPreseveQueryParams hook. For each experiment listed here, AuthPreserveQueryParams will add its assigned group to a query param in the form ?mpo=<experiment1-name:group>;<experiment2-name:group>",
 			"value": []
+		},
+		"MetricsPlatformEnableHeadPixel": {
+			"description": "Enable the head pixel beacon. This is a JavaScript module that emits a page loaded event from the header. This is useful for tracking page load times.",
+			"value": false
+		},
+		"MetricsPlatformHeadPixelMetric": {
+			"description": "The name of the head pixel metric. This is used to emit the initial page load metric to Prometheus.",
+			"value": "mediawiki_page_load_head_pixel_total"
 		}
 	},
 	"HookHandlers": {
@@ -54,11 +62,19 @@
 				"MetricsPlatform.XLab.EnrollmentAuthority",
 				"MetricsPlatform.XLab.ExperimentManager"
 			]
+		},
+		"XLabPageBeacon": {
+			"class": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\PageBeacon",
+			"services": [
+				"MainConfig",
+				"MetricsPlatform.XLab.ExperimentManager"
+			]
 		}
 	},
 	"Hooks": {
 		"AuthPreserveQueryParams": "XLabMain",
-		"BeforeInitialize": "XLabMain"
+		"BeforeInitialize": "XLabMain",
+		"BeforePageDisplay": "XLabPageBeacon"
 	},
 	"ResourceModules": {
 		"ext.xLab": {
@@ -70,7 +86,8 @@
 				{
 					"name": "config.json",
 					"callback": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\ResourceLoader\\Hooks::getConfigForXLabModule"
-				}
+				},
+				"Experiments.js"
 			],
 			"dependencies": [
 				"ext.eventLogging"
