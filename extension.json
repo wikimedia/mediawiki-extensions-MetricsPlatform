@@ -39,6 +39,10 @@
 		"MetricsPlatformExperimentEventIntakeServiceUrl": {
 			"description": "The URL of the EventGate experiment-related event intake service.",
 			"value": "http://localhost:8192/v1/events?hasty=true"
+		},
+		"MetricsPlatformAuthPreserveQueryParamsExperiments": {
+			"description": "List of experiment names to use in the AuthPreseveQueryParams hook. For each experiment listed here, AuthPreserveQueryParams will add its assigned group to a query param in the form ?mpo=<experiment1-name:group>;<experiment2-name:group>",
+			"value": []
 		}
 	},
 	"HookHandlers": {
@@ -53,6 +57,7 @@
 		}
 	},
 	"Hooks": {
+		"AuthPreserveQueryParams": "XLabMain",
 		"BeforeInitialize": "XLabMain"
 	},
 	"ResourceModules": {

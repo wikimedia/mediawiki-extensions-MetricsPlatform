@@ -2,7 +2,9 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
+use MediaWiki\Auth\Hook\AuthPreserveQueryParamsHook;
 use MediaWiki\Config\Config;
+use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\MetricsPlatform\InstrumentConfigsFetcher;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentRequest;
@@ -11,6 +13,7 @@ use MediaWiki\Hook\BeforeInitializeHook;
 use Wikimedia\Assert\Assert;
 
 class Hooks implements
+	AuthPreserveQueryParamsHook,
 	BeforeInitializeHook
 {
 	public const CONSTRUCTOR_OPTIONS = [
@@ -34,6 +37,27 @@ class Hooks implements
 			'$config',
 			'Required config "MetricsPlatformEnableExperimentConfigsFetching" missing.'
 		);
+	}
+
+	public function onAuthPreserveQueryParams( array &$params, array $options ) {
+		$request = RequestContext::getMain()->getRequest();
+		$mpo = $request->getRawVal( 'mpo' );
+		if ( $mpo ) {
+			$params['mpo'] = $mpo;
+			return;
+		}
+		$experiments = $this->config->get( 'MetricsPlatformAuthPreserveQueryParamsExperiments' );
+		$mpoParams = [];
+		foreach ( $experiments as $experimentName ) {
+			$experiment = $this->experimentManager->getExperiment( $experimentName );
+			$assignedGroup = $experiment?->getAssignedGroup();
+			if ( $assignedGroup ) {
+				$mpoParams[] = "$experimentName:$assignedGroup";
+			}
+		}
+		if ( $mpoParams ) {
+			$params['mpo'] = implode( ';', $mpoParams );
+		}
 	}
 
 	/**
