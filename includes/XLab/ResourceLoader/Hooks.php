@@ -11,6 +11,7 @@ class Hooks {
 	private const XLAB_STREAMS = [
 		'product_metrics.web_base',
 		'mediawiki.product_metrics.translation_mint_for_readers.experiments',
+		'product_metrics.web_base_reading_list'
 	];
 
 	/**
