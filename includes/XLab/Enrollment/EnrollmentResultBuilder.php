@@ -13,6 +13,7 @@ class EnrollmentResultBuilder {
 	private array $assigned = [];
 	private array $subjectIDs = [];
 	private array $samplingUnits = [];
+	private ?array $enrollments = null;
 
 	public function addExperiment( string $experimentName, string $subjectID, string $samplingUnit ): void {
 		$this->activeExperiments[ $experimentName ] = true;
@@ -31,18 +32,34 @@ class EnrollmentResultBuilder {
 
 	/**
 	 * Returns information about experiments and experiment enrollments that have been added in a
-	 * format that can be used by the JS xLab SDK and {@link ExperimentManager}.
+	 * format that can be used by the JS xLab SDK and {@link ExperimentManager}. Note that this
+	 * provides `subject_ids` values.
 	 *
 	 * @return array
 	 */
 	public function build(): array {
-		return [
-			'active_experiments' => array_keys( $this->activeExperiments ),
-			'overrides' => array_keys( $this->overrides ),
-			'enrolled' => array_keys( $this->enrolled ),
-			'assigned' => $this->assigned,
-			'subject_ids' => $this->subjectIDs,
-			'sampling_units' => $this->samplingUnits,
-		];
+		if ( $this->enrollments === null ) {
+			$this->enrollments = [
+				'active_experiments' => array_keys( $this->activeExperiments ),
+				'overrides' => array_keys( $this->overrides ),
+				'enrolled' => array_keys( $this->enrolled ),
+				'assigned' => $this->assigned,
+				'subject_ids' => $this->subjectIDs,
+				'sampling_units' => $this->samplingUnits,
+			];
+		}
+		return $this->enrollments;
+	}
+
+	/**
+	 * Returns information about experiments and experiment enrollments that have been added in a
+	 * format meant for logging, that is, without `subject_ids` data.
+	 *
+	 * @return array
+	 */
+	public function getEnrollmentsWithoutSubjectIds(): array {
+		$enrollments = $this->build();
+		unset( $enrollments['subject_ids'] );
+		return array_filter( $enrollments, 'count' );
 	}
 }

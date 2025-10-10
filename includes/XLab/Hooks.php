@@ -10,6 +10,7 @@ use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentRequest;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder;
 use MediaWiki\Hook\BeforeInitializeHook;
+use MediaWiki\Logger\LoggerFactory;
 use Wikimedia\Assert\Assert;
 
 class Hooks implements
@@ -104,5 +105,8 @@ class Hooks implements
 		// T393101: Add CSS classes representing experiment enrollment and assignment automatically so that experiment
 		// implementers don't have to do this themselves.
 		$output->addBodyClasses( EnrollmentCssClassSerializer::serialize( $result->build() ) );
+
+		// T404262: Add field for A/B test (and control) findability in Logstash
+		LoggerFactory::getContext()->add( [ 'context.ab_tests' => $result->getEnrollmentsWithoutSubjectIds() ] );
 	}
 }
