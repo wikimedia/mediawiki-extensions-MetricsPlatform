@@ -148,6 +148,16 @@ class Experiment {
 	 * @return {Experiment} The instance on which this method was called
 	 */
 	setStream( streamName ) {
+		if ( !this.metricsClient.getStreamConfig( streamName ) ) {
+			// eslint-disable-next-line no-console
+			console.warn(
+				'%s: The stream %s isn\'t registered. Events will not be sent for this experiment. Have you added %s to $wgMetricsPlatformExperimentStreamNames?',
+				this.name,
+				streamName,
+				streamName
+			);
+		}
+
 		this.streamName = streamName;
 
 		return this;

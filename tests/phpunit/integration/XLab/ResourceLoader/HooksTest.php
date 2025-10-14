@@ -27,6 +27,9 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 		$this->config = new HashConfig( [
 			'MetricsPlatformExperimentEventIntakeServiceUrl' => 'http://foo.bar',
 			'EventLoggingServiceUri' => 'http://baz.qux',
+			'MetricsPlatformExperimentStreamNames' => [
+				'product_metrics.web_base',
+			]
 		] );
 	}
 
@@ -44,9 +47,8 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 	}
 
 	public static function provideInstrumentConfigs(): Generator {
-		yield [ false, [], [] ];
 		yield [
-			false,
+			[],
 			[
 				[
 					'slug' => 'foo',
@@ -181,7 +183,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 		array $instrumentConfigs,
 		array $expectedStreamConfigs
 	): void {
-		$this->setService( 'EventLogging.StreamConfigs', $streamConfigs );
+		$this->overrideConfigValue( 'EventStreams', $streamConfigs );
 
 		$this->configsFetcher->expects( $this->once() )
 			->method( 'getInstrumentConfigs' )

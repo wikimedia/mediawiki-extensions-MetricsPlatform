@@ -3,7 +3,8 @@ const { Experiment, UnenrolledExperiment, OverriddenExperiment } = mw.xLab;
 QUnit.module( 'ext.xLab/Experiment', QUnit.newMwEnvironment( {
 	beforeEach: function () {
 		this.metricsClient = {
-			submitInteraction: this.sandbox.spy()
+			submitInteraction: this.sandbox.spy(),
+			getStreamConfig: this.sandbox.stub()
 		};
 
 		// Note well that Experiment#constructor() is package-private. Calling it outside xLab is
@@ -107,6 +108,8 @@ QUnit.test( 'send() - overrides experiment field', function ( assert ) {
 } );
 
 QUnit.test( 'send() - overriding stream and schema', function ( assert ) {
+	this.metricsClient.getStreamConfig.returns( {} );
+
 	this.everyoneExperiment.setStream( 'my_awesome_stream' )
 		.setSchema( '/my/awesome/schema/0.0.1' )
 		.send( 'Hello, World!' );
@@ -126,6 +129,17 @@ QUnit.test( 'send() - overriding stream and schema', function ( assert ) {
 			}
 		}
 	] );
+} );
+
+QUnit.test( 'setStream() - warns when stream isn\'t registered', function ( assert ) {
+	this.sandbox.stub( console, 'warn' );
+
+	this.everyoneExperiment.setStream( 'my_awesome_stream' );
+
+	assert.strictEqual( this.metricsClient.getStreamConfig.called, true );
+
+	// eslint-disable-next-line no-console
+	assert.strictEqual( console.warn.called, true );
 } );
 
 // ---

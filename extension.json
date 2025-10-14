@@ -36,6 +36,12 @@
 			"description": "The URL of the EventGate experiment-related event intake service.",
 			"value": "http://localhost:8192/v1/events?hasty=true"
 		},
+		"MetricsPlatformExperimentStreamNames": {
+			"description": "The names of the event streams for experiments configured in xLab.",
+			"value": [
+				"product_metrics.web_base"
+			]
+		},
 		"MetricsPlatformAuthPreserveQueryParamsExperiments": {
 			"description": "List of experiment names to use in the AuthPreseveQueryParams hook. For each experiment listed here, AuthPreserveQueryParams will add its assigned group to a query param in the form ?mpo=<experiment1-name:group>;<experiment2-name:group>",
 			"value": []

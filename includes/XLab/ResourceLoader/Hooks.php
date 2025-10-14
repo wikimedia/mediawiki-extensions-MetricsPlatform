@@ -8,12 +8,6 @@ use MediaWiki\MediaWikiServices;
 use MediaWiki\ResourceLoader as RL;
 
 class Hooks {
-	private const XLAB_STREAMS = [
-		'product_metrics.web_base',
-		'mediawiki.product_metrics.translation_mint_for_readers.experiments',
-		'mediawiki.product_metrics.reading_list',
-		'mediawiki.product_metrics.readerexperiments_imagebrowsing',
-	];
 
 	/**
 	 * Gets the contents of the `config.json` file for the `ext.xLab` ResourceLoader module.
@@ -33,91 +27,107 @@ class Hooks {
 
 			'InstrumentEventIntakeServiceUrl' => $config->get( 'EventLoggingServiceUri' ),
 
-			'streamConfigs' => self::getStreamConfigs(),
+			'streamConfigs' => self::getStreamConfigs( $config ),
 			'instrumentConfigs' => self::getStreamConfigsForInstruments(),
 		];
 	}
 
 	/**
-	 * Gets the stream configs for those streams that xLab uses (see {@link Hooks::XLAB_STREAMS}).
+	 * Gets the stream configs for experiments configured in xLab. Currently, the names of streams are statically
+	 * configured using the `$wgMetricsPlatformExperimentStreamNames` config variable.
 	 *
-	 * Note well that the stream configs are limited copies. The copies only contain the
+	 * Note well that the stream configs are limited copies of the originals. The copies only contain the
 	 * `producers.metrics_platform_client` property because:
 	 *
 	 * 1. The Metrics Platform client treats streams as in-sample by default. Therefore, removing the analytics sampling
 	 *    config from the copied stream config makes the stream always in-sample
 	 *
-	 * 2. It minimizes the size of the `ext.xLab` ResourceLoader module.
+	 * 2. It helps keep the `ext.xLab` ResourceLoader module small.
 	 *
-	 * @return array|false
+	 * @return array
 	 */
-	private static function getStreamConfigs() {
-		$streamConfigs = MediaWikiServices::getInstance()->getService( 'EventLogging.StreamConfigs' );
-
-		if ( $streamConfigs === false ) {
-			return false;
-		}
-
-		$result = [];
-
-		foreach ( self::XLAB_STREAMS as $streamName ) {
-			if ( !isset( $streamConfigs[$streamName] ) ) {
-				continue;
-			}
-
-			$streamConfig = $streamConfigs[$streamName];
-
-			if ( !isset( $streamConfig['producers']['metrics_platform_client'] ) ) {
-				return [];
-			}
-
-			$result[$streamName] = [
-				'producers' => [
-					'metrics_platform_client' => $streamConfig['producers']['metrics_platform_client'],
-				],
-			];
-		}
-
-		return $result;
+	private static function getStreamConfigs( Config $config ): array {
+		return self::getMinimumUsableStreamConfigs( $config->get( 'MetricsPlatformExperimentStreamNames' ) );
 	}
 
 	/**
-	 * Gets the configs for instruments configured in xLab.
+	 * Gets the stream configs for instruments configured in xLab.
 	 *
-	 * The configs are marshalled into stream-config-like data structures that are compatible with the Metrics Platform
-	 * JS and PHP clients.
+	 * Note well that the stream configs are limited copies of the originals. The copies only contain the
+	 * `producers.metrics_platform_client` and `sample` properties. This helps keep the `ext.xLab` ResourceLoader module
+	 * small.
 	 *
 	 * @return array
 	 */
 	private static function getStreamConfigsForInstruments(): array {
-		$streamConfigs = MediaWikiServices::getInstance()->getService( 'EventLogging.StreamConfigs' ) ?? [];
-		$configs = Services::getConfigsFetcher()->getInstrumentConfigs();
+		$instrumentConfigs = Services::getConfigsFetcher()->getInstrumentConfigs();
+		$instrumentStreamConfigs = [];
+		$targetedStreams = [];
 
-		return array_reduce(
-			$configs,
-			static function ( array $result, array $config ) use ( $streamConfigs ) {
-				$instrumentName = $config['slug'];
-				$targetStreamName = $config['stream_name'];
+		foreach ( $instrumentConfigs as $instrumentConfig ) {
+			$instrumentName = $instrumentConfig['slug'];
+			$targetStreamName = $instrumentConfig['stream_name'];
+			$targetedStreams[] = $targetStreamName;
 
-				$result[ $instrumentName ] = [
-					'producers' => [
-						'metrics_platform_client' => [
-							'provide_values' => $config['contextual_attributes'],
-							'stream_name' => $targetStreamName,
-						],
+			$instrumentStreamConfigs[ $instrumentName ] = [
+				'producers' => [
+					'metrics_platform_client' => [
+						'provide_values' => $instrumentConfig['contextual_attributes'],
+						'stream_name' => $targetStreamName,
 					],
-					'sample' => $config['sample'],
+				],
+				'sample' => $instrumentConfig['sample'],
 
-					// TODO: 'schema_id' => ???
-				];
+				// TODO: 'schema_id' => ???
+			];
+		}
 
-				if ( isset( $streamConfigs[ $targetStreamName ] ) ) {
-					$result[ $targetStreamName ] = $streamConfigs[ $targetStreamName ];
-				}
+		// Get the stream configs for the streams targeted by the instruments
+		$targetedStreamConfigs = self::getMinimumUsableStreamConfigs( $targetedStreams );
 
-				return $result;
-			},
-			[]
+		return array_merge( $instrumentStreamConfigs, $targetedStreamConfigs );
+	}
+
+	/**
+	 * @param string[] $streamNames
+	 * @return array
+	 */
+	private static function getMinimumUsableStreamConfigs( array $streamNames ): array {
+		return array_map(
+			self::getMinimumUsableStreamConfig( ... ),
+
+			// NOTE: MetricsPlatform has a hard dependency on EventStreamConfig. If this code is executing, then
+			// EventStreamConfig is loaded and this service is defined.
+			MediaWikiServices::getInstance()->getService( 'EventStreamConfig.StreamConfigs' )
+				->get( $streamNames )
 		);
+	}
+
+	/**
+	 * Gets the minimum viable stream config usable by the Metrics Platform JS Client by removing all but the following
+	 * properties:
+	 *
+	 * * `producers.metrics_platform_client`
+	 * * `sample`
+	 *
+	 * @param array $streamConfig
+	 * @return array
+	 */
+	private static function getMinimumUsableStreamConfig( array $streamConfig ): array {
+		$result = array_intersect_key(
+			$streamConfig,
+			[
+				'producers' => true,
+				'sample' => true,
+			]
+		);
+
+		if ( isset( $streamConfig['producers']['metrics_platform_client'] ) ) {
+			$result['producers'] = [
+				'metrics_platform_client' => $streamConfig['producers']['metrics_platform_client'],
+			];
+		}
+
+		return $result;
 	}
 }
