@@ -7,6 +7,7 @@ use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentRequest;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\OverridesEnrollmentAuthority;
 use MediaWikiUnitTestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * @covers \MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\OverridesEnrollmentAuthority
@@ -14,6 +15,7 @@ use MediaWikiUnitTestCase;
 class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 	private EnrollmentRequest $request;
 	private EnrollmentResultBuilder $result;
+	private LoggerInterface $logger;
 	private OverridesEnrollmentAuthority $authority;
 
 	public function setUp(): void {
@@ -21,7 +23,8 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 
 		$this->request = $this->createMock( EnrollmentRequest::class );
 		$this->result = new EnrollmentResultBuilder();
-		$this->authority = new OverridesEnrollmentAuthority();
+		$this->logger = $this->createMock( LoggerInterface::class );
+		$this->authority = new OverridesEnrollmentAuthority( $this->logger );
 	}
 
 	public function testCookieAndQueryAreEmpty(): void {
@@ -93,5 +96,27 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 				'qux' => 'quux',
 			],
 		];
+	}
+
+	public function testMalformedQuery(): void {
+		$this->request->expects( $this->once() )
+			->method( 'getRawEnrollmentOverridesFromCookie' )
+			->willReturn( '' );
+
+		$this->request->expects( $this->once() )
+			->method( 'getRawEnrollmentOverridesFromQuery' )
+			->willReturn( '51qdu1' );
+
+		$this->logger->expects( $this->once() )
+			->method( 'error' )
+			->with( 'The raw enrollment overrides could not be parsed properly. They are malformed.' );
+
+		$this->authority->enrollUser( $this->request, $this->result );
+
+		$this->assertEquals(
+			new EnrollmentResultBuilder(),
+			$this->result,
+			'If the query is malformed, then it isn\'t processed'
+		);
 	}
 }

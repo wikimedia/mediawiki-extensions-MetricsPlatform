@@ -2,6 +2,8 @@
 
 namespace MediaWiki\Extension\MetricsPlatform\XLab\Enrollment;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Allows xLab to handle overrides for testing purposes.
  *
@@ -24,6 +26,9 @@ class OverridesEnrollmentAuthority implements EnrollmentAuthorityInterface {
 	// experiment.sampling_unit[ experiment_name ] property, which can only be "mw-user", "edge-unique", or "session".
 	// See https://gitlab.wikimedia.org/repos/data-engineering/schemas-event-secondary/-/blob/fe40babf56f916e2072768b25fca5a2d4b5afb80/jsonschema/fragment/analytics/product_metrics/experiment/current.yaml#L32
 	private const SAMPLING_UNIT = 'mw-user';
+
+	public function __construct( private readonly LoggerInterface $logger ) {
+	}
 
 	public function enrollUser( EnrollmentRequest $request, EnrollmentResultBuilder $result ): void {
 		$assignments = array_merge(
@@ -59,18 +64,27 @@ class OverridesEnrollmentAuthority implements EnrollmentAuthorityInterface {
 	 * @return array
 	 */
 	private function processRawEnrollmentOverrides( string $rawEnrollmentOverrides ): array {
-		$result = [];
-
 		if ( !$rawEnrollmentOverrides ) {
-			return $result;
+			return [];
 		}
 
 		// TODO: Should we limit the number of overrides that we accept?
 		$parts = explode( ';', $rawEnrollmentOverrides );
 
+		$result = [];
+
 		foreach ( $parts as $override ) {
-			[ $experimentName, $groupName ] = explode( ':', $override, 2 );
-			$result[$experimentName] = $groupName;
+			$overrideParts = explode( ':', $override, 2 );
+
+			if ( count( $overrideParts ) !== 2 ) {
+				$this->logger->error(
+					'The raw enrollment overrides could not be parsed properly. They are malformed.'
+				);
+
+				return [];
+			}
+
+			$result[$overrideParts[0]] = $overrideParts[1];
 		}
 
 		return $result;
