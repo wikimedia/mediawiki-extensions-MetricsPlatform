@@ -47,7 +47,6 @@ class HooksTest
 
 		$this->overrideConfigValues( [
 			'MetricsPlatformEnableExperiments' => true,
-			'MetricsPlatformEnableExperimentOverrides' => true,
 			'MetricsPlatformEnableExperimentConfigsFetching' => true,
 		] );
 

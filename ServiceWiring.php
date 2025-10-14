@@ -45,18 +45,11 @@ return [
 		static function ( MediaWikiServices $services ): LoggedInExperimentsEnrollmentAuthority {
 			return new LoggedInExperimentsEnrollmentAuthority( $services->getCentralIdLookup() );
 		},
-	'MetricsPlatform.XLab.OverridesEnrollmentAuthority' =>
-		static function ( MediaWikiServices $services ): OverridesEnrollmentAuthority {
-			return new OverridesEnrollmentAuthority( new ServiceOptions(
-				OverridesEnrollmentAuthority::CONSTRUCTOR_OPTIONS,
-				$services->getMainConfig()
-			) );
-		},
 	'MetricsPlatform.XLab.EnrollmentAuthority' => static function ( MediaWikiServices $services ): EnrollmentAuthority {
 		return new EnrollmentAuthority(
 			$services->getService( 'MetricsPlatform.XLab.EveryoneExperimentsEnrollmentAuthority' ),
 			$services->getService( 'MetricsPlatform.XLab.LoggedInExperimentsEnrollmentAuthority' ),
-			$services->getService( 'MetricsPlatform.XLab.OverridesEnrollmentAuthority' )
+			new OverridesEnrollmentAuthority()
 		);
 	},
 	'MetricsPlatform.XLab.ExperimentManager' => static function ( MediaWikiServices $services ): ExperimentManager {

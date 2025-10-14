@@ -25,7 +25,6 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 
 		$this->context = RL\Context::newDummyContext();
 		$this->config = new HashConfig( [
-			'MetricsPlatformEnableExperimentOverrides' => false,
 			'MetricsPlatformExperimentEventIntakeServiceUrl' => 'http://foo.bar',
 			'EventLoggingServiceUri' => 'http://baz.qux',
 		] );
@@ -36,7 +35,6 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 
 		$this->assertArrayContains(
 			[
-				'EnableExperimentOverrides' => false,
 				'EveryoneExperimentEventIntakeServiceUrl' => 'http://foo.bar',
 				'LoggedInExperimentEventIntakeServiceUrl' => 'http://baz.qux',
 				'InstrumentEventIntakeServiceUrl' => 'http://baz.qux',

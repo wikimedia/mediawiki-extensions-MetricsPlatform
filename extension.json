@@ -24,10 +24,6 @@
 		"MetricsPlatformInstrumentConfiguratorBaseUrl": {
 			"value": "http://localhost:80"
 		},
-		"MetricsPlatformEnableExperimentOverrides": {
-			"description": "Enable experiment enrollment overrides via a querystring parameter or a cookie.",
-			"value": false
-		},
 		"MetricsPlatformEnableExperiments": {
 			"description": "If this is falsy, then all experiment-related behavior is disabled.",
 			"value": false

@@ -23,7 +23,6 @@ class Hooks {
 	 */
 	public static function getConfigForXLabModule( RL\Context $context, Config $config ): array {
 		return [
-			'EnableExperimentOverrides' => $config->get( 'MetricsPlatformEnableExperimentOverrides' ),
 			'EveryoneExperimentEventIntakeServiceUrl' =>
 				$config->get( 'MetricsPlatformExperimentEventIntakeServiceUrl' ),
 

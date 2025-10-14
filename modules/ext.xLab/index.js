@@ -5,7 +5,6 @@ const { Experiment, UnenrolledExperiment, OverriddenExperiment } = require( './E
 const COOKIE_NAME = 'mpo';
 /**
  * @type {Object}
- * @property {boolean} EnableExperimentOverrides
  * @property {string} EveryoneExperimentEventIntakeServiceUrl
  * @property {string} LoggedInExperimentEventIntakeServiceUrl
  * @property {string} InstrumentEventIntakeServiceUrl
@@ -142,9 +141,6 @@ function setCookieAndReload( value ) {
 /**
  * Overrides an experiment enrolment and reloads the page.
  *
- * Note well that this method is only available when `$wgMetricsPlatformEnableExperimentOverrides`
- * is truthy.
- *
  * @param {string} experimentName The name of the experiment
  * @param {string} groupName The assigned group that will override the assigned one
  * @memberof mw.xLab
@@ -174,9 +170,6 @@ function overrideExperimentGroup(
 /**
  * Clears all enrolment overrides for the experiment and reloads the page.
  *
- * Note well that this method is only available when `$wgMetricsPlatformEnableExperimentOverrides`
- * is truthy.
- *
  * @param {string} experimentName
  * @memberof mw.xLab
  */
@@ -199,9 +192,6 @@ function clearExperimentOverride( experimentName ) {
 
 /**
  * Clears all experiment enrolment overrides for all experiments and reloads the page.
- *
- * Note well that this method is only available when `$wgMetricsPlatformEnableExperimentOverrides`
- * is truthy.
  *
  * @memberof mw.xLab
  */
@@ -235,16 +225,14 @@ function getInstrument( instrumentName ) {
 mw.xLab = {
 	getExperiment,
 	getAssignments,
-	getInstrument
+	getInstrument,
+	overrideExperimentGroup,
+	clearExperimentOverride,
+	clearExperimentOverrides
+
 };
 
 // JS overriding experimentation feature
-if ( config.EnableExperimentOverrides || window.QUnit ) {
-	mw.xLab.overrideExperimentGroup = overrideExperimentGroup;
-	mw.xLab.clearExperimentOverride = clearExperimentOverride;
-	mw.xLab.clearExperimentOverrides = clearExperimentOverrides;
-}
-
 if ( window.QUnit ) {
 	mw.xLab = Object.assign( mw.xLab, {
 		Experiment,

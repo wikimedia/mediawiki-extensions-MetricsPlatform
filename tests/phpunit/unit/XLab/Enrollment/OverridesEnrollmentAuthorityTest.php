@@ -3,7 +3,6 @@
 namespace MediaWiki\Extension\MetricsPlatform\Tests;
 
 use Generator;
-use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentRequest;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentResultBuilder;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\OverridesEnrollmentAuthority;
@@ -22,14 +21,7 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 
 		$this->request = $this->createMock( EnrollmentRequest::class );
 		$this->result = new EnrollmentResultBuilder();
-
-		$options = new ServiceOptions(
-			OverridesEnrollmentAuthority::CONSTRUCTOR_OPTIONS,
-			[
-				'MetricsPlatformEnableExperimentOverrides' => true,
-			]
-		);
-		$this->authority = new OverridesEnrollmentAuthority( $options );
+		$this->authority = new OverridesEnrollmentAuthority();
 	}
 
 	public function testCookieAndQueryAreEmpty(): void {
@@ -101,24 +93,5 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 				'qux' => 'quux',
 			],
 		];
-	}
-
-	public function testDisabled(): void {
-		$this->request->expects( $this->never() )
-			->method( 'getRawEnrollmentOverridesFromCookie' );
-
-		$this->request->expects( $this->never() )
-			->method( 'getRawEnrollmentOverridesFromQuery' );
-
-		$options = new ServiceOptions(
-			OverridesEnrollmentAuthority::CONSTRUCTOR_OPTIONS,
-			[
-				'MetricsPlatformEnableExperimentOverrides' => false,
-			]
-		);
-		$authority = new OverridesEnrollmentAuthority( $options );
-		$authority->enrollUser( $this->request, $this->result );
-
-		$this->assertEquals( new EnrollmentResultBuilder(), $this->result );
 	}
 }
