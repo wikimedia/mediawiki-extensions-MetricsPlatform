@@ -193,6 +193,9 @@ class UnenrolledExperiment extends Experiment {
 
 	// eslint-disable-next-line no-unused-vars
 	send( action, interactionData ) {}
+
+	// eslint-disable-next-line no-unused-vars
+	setStream( streamName ) {}
 }
 
 /**
