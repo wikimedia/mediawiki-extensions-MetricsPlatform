@@ -181,6 +181,14 @@ QUnit.test( 'send()', ( assert ) => {
 	);
 } );
 
+QUnit.test( 'setStream() - doesn\'t trigger an error', ( assert ) => {
+	assert.expect( 0 );
+
+	const e = new UnenrolledExperiment( 'hello_world' );
+
+	e.setStream( 'my_awesome_stream' );
+} );
+
 // ---
 
 QUnit.module( 'ext.xLab/OverriddenExperiment' );
