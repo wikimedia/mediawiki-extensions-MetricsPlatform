@@ -248,3 +248,11 @@ QUnit.test( 'send()', function ( assert ) {
 		'send() shouldn\'t throw an error'
 	);
 } );
+
+QUnit.test( 'setStream() - doesn\'t trigger an error', ( assert ) => {
+	assert.expect( 0 );
+
+	const e = new OverriddenExperiment( 'foo_bar' );
+
+	e.setStream( 'my_awesome_stream' );
+} );
