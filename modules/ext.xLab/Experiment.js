@@ -229,6 +229,9 @@ class OverriddenExperiment extends Experiment {
 		// eslint-disable-next-line no-console
 		console.log( action, JSON.stringify( interactionData, null, 2 ) );
 	}
+
+	// eslint-disable-next-line no-unused-vars
+	setStream( streamName ) {}
 }
 
 module.exports = {
