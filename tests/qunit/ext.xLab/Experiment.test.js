@@ -230,6 +230,7 @@ QUnit.test( 'send()', function ( assert ) {
 		.expects( 'log' )
 		.once()
 		.withExactArgs(
+			'hello_world: The enrolment for this experiment has been overridden. The following event will not be sent:\n',
 			action,
 			JSON.stringify( interactionData, null, 2 )
 		);

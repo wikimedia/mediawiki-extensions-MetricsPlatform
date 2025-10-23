@@ -227,7 +227,11 @@ class OverriddenExperiment extends Experiment {
 
 	send( action, interactionData ) {
 		// eslint-disable-next-line no-console
-		console.log( action, JSON.stringify( interactionData, null, 2 ) );
+		console.log(
+			`${ this.name }: The enrolment for this experiment has been overridden. The following event will not be sent:\n`,
+			action,
+			JSON.stringify( interactionData, null, 2 )
+		);
 	}
 
 	// eslint-disable-next-line no-unused-vars
