@@ -18,7 +18,7 @@ class PageBeacon implements BeforePageDisplayHook {
 		// WMEStatsdBaseUri
 	];
 
-	public const XLAB_EXPERIMENT_NAME_FOR_HEAD_PIXEL = 'xlab-mw-module-loaded';
+	public const XLAB_EXPERIMENT_NAME_FOR_HEAD_PIXEL = 'xlab-mw-module-loaded-v2';
 
 	private ServiceOptions $options;
 	private Config $config;
@@ -53,7 +53,7 @@ class PageBeacon implements BeforePageDisplayHook {
 
 		// Add beacon only if the user is enrolled and sampled.
 		$experiment = $this->experimentManager->getExperiment( self::XLAB_EXPERIMENT_NAME_FOR_HEAD_PIXEL );
-		if ( !$experiment->isAssignedGroup( 'treatment' ) ) {
+		if ( !$experiment->isAssignedGroup( 'control', 'treatment' ) ) {
 			return;
 		}
 
