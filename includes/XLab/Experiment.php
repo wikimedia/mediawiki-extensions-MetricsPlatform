@@ -7,7 +7,7 @@ use Wikimedia\Stats\StatsFactory;
 
 class Experiment implements ExperimentInterface {
 	private const BASE_STREAM = 'product_metrics.web_base';
-	private const BASE_SCHEMAID = '/analytics/product_metrics/web/base/1.4.2';
+	private const BASE_SCHEMAID = '/analytics/product_metrics/web/base/1.5.0';
 	private StatsFactory $statsFactory;
 
 	public function __construct(

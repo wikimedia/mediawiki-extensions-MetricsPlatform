@@ -73,7 +73,7 @@ QUnit.test.each(
 		assert.strictEqual( this.metricsClient.submitInteraction.called, true );
 		assert.deepEqual( this.metricsClient.submitInteraction.firstCall.args, [
 			'product_metrics.web_base',
-			'/analytics/product_metrics/web/base/1.4.2',
+			'/analytics/product_metrics/web/base/1.5.0',
 			'Hello, World!',
 			{
 				experiment: expectedExperiment
@@ -93,7 +93,7 @@ QUnit.test( 'send() - overrides experiment field', function ( assert ) {
 	assert.strictEqual( this.metricsClient.submitInteraction.called, true );
 	assert.deepEqual( this.metricsClient.submitInteraction.firstCall.args, [
 		'product_metrics.web_base',
-		'/analytics/product_metrics/web/base/1.4.2',
+		'/analytics/product_metrics/web/base/1.5.0',
 		'Hello, World!',
 		{
 			experiment: {

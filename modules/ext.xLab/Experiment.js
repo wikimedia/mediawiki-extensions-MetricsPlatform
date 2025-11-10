@@ -1,4 +1,4 @@
-const SCHEMA_ID = '/analytics/product_metrics/web/base/1.4.2';
+const SCHEMA_ID = '/analytics/product_metrics/web/base/1.5.0';
 const STREAM_NAME = 'product_metrics.web_base';
 
 const COORDINATOR_XLAB = 'xLab';
@@ -56,7 +56,7 @@ class Experiment {
 	 * [the `fragment/analytics/product_metrics/experiment` schema fragment][0].
 	 *
 	 * By default, the analytics event will be sent to the `product_metrics.web_base` stream and be
-	 * validated with the `/analytics/product_metrics/web/base/1.4.2` schema. The stream and schema
+	 * validated with the `/analytics/product_metrics/web/base/1.5.0` schema. The stream and schema
 	 * can be overridden with {@link Experiment#setStream} and {@link Experiment#setSchema},
 	 * respectively.
 	 *
