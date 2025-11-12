@@ -35,7 +35,8 @@ class HooksTest
 		'assigned' => [],
 		'subject_ids' => [],
 		'sampling_units' => [],
-		'overrides' => []
+		'overrides' => [],
+		'coordinator' => []
 	];
 	private CentralIdLookup $centralIdLookup;
 	private RequestContext $context;
@@ -145,7 +146,11 @@ class HooksTest
 				'experiment_1' => 'edge-unique',
 				'experiment_2' => 'edge-unique'
 			],
-			'overrides' => []
+			'overrides' => [],
+			'coordinator' => [
+				'experiment_1' => 'xLab',
+				'experiment_2' => 'xLab'
+			]
 		];
 
 		$this->assertEquals(
@@ -209,7 +214,13 @@ class HooksTest
 				'logged-in-experiment-1' => 'mw-user',
 				'logged-in-experiment-2' => 'mw-user'
 			],
-			'overrides' => []
+			'overrides' => [],
+			'coordinator' => [
+				'experiment_1' => 'xLab',
+				'experiment_2' => 'xLab',
+				'logged-in-experiment-1' => 'xLab',
+				'logged-in-experiment-2' => 'xLab'
+			]
 		];
 
 		$this->assertEquals(
@@ -305,10 +316,15 @@ class HooksTest
 			'sampling_units' => [
 				'logged-in-experiment-1' => 'mw-user',
 				'logged-in-experiment-2' => 'mw-user',
-				'logged-in-experiment-3' => 'mw-user',
+				'logged-in-experiment-3' => 'overridden',
 			],
 			'overrides' => [
 				'logged-in-experiment-3',
+			],
+			'coordinator' => [
+				'logged-in-experiment-1' => 'xLab',
+				'logged-in-experiment-2' => 'xLab',
+				'logged-in-experiment-3' => 'forced',
 			]
 		];
 

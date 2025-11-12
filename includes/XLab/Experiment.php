@@ -5,17 +5,18 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 use Wikimedia\MetricsPlatform\MetricsClient;
 use Wikimedia\Stats\StatsFactory;
 
+/**
+ * Represents an enrollment experiment for the current user
+ */
 class Experiment implements ExperimentInterface {
 	private const BASE_STREAM = 'product_metrics.web_base';
-	private const BASE_SCHEMAID = '/analytics/product_metrics/web/base/1.5.0';
-	private StatsFactory $statsFactory;
+	private const BASE_SCHEMA_ID = '/analytics/product_metrics/web/base/1.5.0';
 
 	public function __construct(
-		private readonly MetricsClient $metricsClient,
-		StatsFactory $statsFactory,
+		private readonly ?MetricsClient $metricsClient,
+		private readonly ?StatsFactory $statsFactory,
 		private readonly ?array $experimentConfig = null
 	) {
-		$this->statsFactory = $statsFactory;
 	}
 
 	/**
@@ -44,7 +45,7 @@ class Experiment implements ExperimentInterface {
 			);
 			$this->metricsClient->submitInteraction(
 				self::BASE_STREAM,
-				self::BASE_SCHEMAID,
+				self::BASE_SCHEMA_ID,
 				$action,
 				$interactionData
 			);
@@ -79,9 +80,11 @@ class Experiment implements ExperimentInterface {
 	 * @param string $experimentName
 	 */
 	private function incrementExperimentEventsSentTotal( string $experimentName ): void {
-		$this->statsFactory->withComponent( 'MetricsPlatform' )
-			->getCounter( 'experiment_events_sent_total' )
-			->setLabel( 'experiment', $experimentName )
-			->increment();
+		if ( $this->statsFactory ) {
+			$this->statsFactory->withComponent( 'MetricsPlatform' )
+				->getCounter( 'experiment_events_sent_total' )
+				->setLabel( 'experiment', $experimentName )
+				->increment();
+		}
 	}
 }

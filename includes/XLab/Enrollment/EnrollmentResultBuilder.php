@@ -13,6 +13,7 @@ class EnrollmentResultBuilder {
 	private array $assigned = [];
 	private array $subjectIDs = [];
 	private array $samplingUnits = [];
+	private array $coordinator = [];
 	private ?array $enrollments = null;
 
 	public function addExperiment( string $experimentName, string $subjectID, string $samplingUnit ): void {
@@ -27,6 +28,9 @@ class EnrollmentResultBuilder {
 
 		if ( $isOverride ) {
 			$this->overrides[ $experimentName ] = true;
+			$this->coordinator[ $experimentName ] = 'forced';
+		} else {
+			$this->coordinator[ $experimentName ] = 'xLab';
 		}
 	}
 
@@ -46,6 +50,7 @@ class EnrollmentResultBuilder {
 				'assigned' => $this->assigned,
 				'subject_ids' => $this->subjectIDs,
 				'sampling_units' => $this->samplingUnits,
+				'coordinator' => $this->coordinator,
 			];
 		}
 		return $this->enrollments;

@@ -22,10 +22,9 @@ use Psr\Log\LoggerInterface;
 class OverridesEnrollmentAuthority implements EnrollmentAuthorityInterface {
 	private const SUBJECT_ID = 'overridden';
 
-	// NOTE: This should probably be something like "overridden" but this value will be used to initialize the
-	// experiment.sampling_unit[ experiment_name ] property, which can only be "mw-user", "edge-unique", or "session".
-	// See https://gitlab.wikimedia.org/repos/data-engineering/schemas-event-secondary/-/blob/fe40babf56f916e2072768b25fca5a2d4b5afb80/jsonschema/fragment/analytics/product_metrics/experiment/current.yaml#L32
-	private const SAMPLING_UNIT = 'mw-user';
+	// experiment.sampling_unit[ experiment_name ] property can only be "mw-user", "edge-unique", or "session" but,
+	// because overridden experiments cannot send events, for clarity we can set `overridden` as the value here
+	private const SAMPLING_UNIT = 'overridden';
 
 	public function __construct( private readonly LoggerInterface $logger ) {
 	}

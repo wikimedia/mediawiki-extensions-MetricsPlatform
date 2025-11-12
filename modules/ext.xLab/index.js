@@ -66,7 +66,8 @@ function getExperiment( experimentName ) {
 	const userExperiments = mw.config.get( 'wgMetricsPlatformUserExperiments' );
 
 	if ( !userExperiments || !userExperiments.assigned[ experimentName ] ) {
-		mw.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
+		// eslint-disable-next-line no-console
+		console.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
 			'Is the experiment configured and running?' );
 
 		return new UnenrolledExperiment( experimentName );

@@ -38,15 +38,20 @@ class ExperimentManager implements ExperimentManagerInterface {
 	 * @return Experiment
 	 */
 	public function getExperiment( string $experimentName ): Experiment {
-		$activeExperiments = $this->enrollmentResult['active_experiments'] ?? [];
-		$isExperimentDefined = in_array( $experimentName, $activeExperiments, true );
-		$experimentConfig = [];
+		$enrolledExperiments = $this->enrollmentResult['enrolled'] ?? [];
 
-		if ( !$isExperimentDefined ) {
+		// The user is not enrolled in the experiment (also because the experiment doesn't exist)
+		if ( !in_array( $experimentName, $enrolledExperiments, true ) )	{
 			$this->logger->info( 'The ' . $experimentName . ' experiment is not registered. ' .
 				'Is the experiment configured and running?' );
-		} else {
-			$experimentConfig = $this->getCurrentUserExperiment( $experimentName );
+			return new UnenrolledExperiment();
+		}
+
+		$experimentConfig = $this->getExperimentConfig( $experimentName );
+
+		// The experiment enrolment has been overridden
+		if ( $experimentConfig['coordinator'] === 'forced' ) {
+			return new OverriddenExperiment( $this->logger, $experimentConfig );
 		}
 
 		return new Experiment( $this->metricsPlatformClient, $this->statsFactory, $experimentConfig );
@@ -58,16 +63,13 @@ class ExperimentManager implements ExperimentManagerInterface {
 	 * @param string $experimentName
 	 * @return array
 	 */
-	private function getCurrentUserExperiment( string $experimentName ): array {
-		return in_array( $experimentName, $this->enrollmentResult['enrolled'], true ) ?
-			[
-				'enrolled' => $experimentName,
-				'assigned' => $this->enrollmentResult['assigned'][ $experimentName ],
-				'subject_id' => $this->enrollmentResult['subject_ids'][ $experimentName ],
-				'sampling_unit' => $this->enrollmentResult['sampling_units'][ $experimentName ],
-				'coordinator' => in_array( $experimentName, $this->enrollmentResult['overrides'] )
-					? 'forced'
-					: 'xLab'
-			] : [];
+	private function getExperimentConfig( string $experimentName ): array {
+		return [
+			'enrolled' => $experimentName,
+			'assigned' => $this->enrollmentResult['assigned'][ $experimentName ],
+			'subject_id' => $this->enrollmentResult['subject_ids'][ $experimentName ],
+			'sampling_unit' => $this->enrollmentResult['sampling_units'][ $experimentName ],
+			'coordinator' => $this->enrollmentResult['coordinator'][ $experimentName ]
+		];
 	}
 }

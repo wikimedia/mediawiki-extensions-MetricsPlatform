@@ -60,7 +60,7 @@ class OverridesEnrollmentAuthorityTest extends MediaWikiUnitTestCase {
 		$expectedResult = new EnrollmentResultBuilder();
 
 		foreach ( $expectedOverrides as $experimentName => $groupName ) {
-			$expectedResult->addExperiment( $experimentName, 'overridden', 'mw-user' );
+			$expectedResult->addExperiment( $experimentName, 'overridden', 'overridden' );
 			$expectedResult->addAssignment( $experimentName, $groupName, true );
 		}
 
