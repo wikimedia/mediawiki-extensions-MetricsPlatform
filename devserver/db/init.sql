@@ -33,6 +33,15 @@ CREATE TABLE IF NOT EXISTS instruments (
 	PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS instruments_history (
+	id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+	instrument_id INT UNSIGNED NOT NULL,
+	utc_journal_dt DATETIME NOT NULL,
+	action VARCHAR(255) NOT NULL,
+	configuration JSON NOT NULL,
+	PRIMARY KEY (id)
+);
+
 CREATE TABLE IF NOT EXISTS contextual_attributes (
 	id INT UNSIGNED NOT NULL AUTO_INCREMENT,
 	contextual_attribute_name VARCHAR(255) NOT NULL,
@@ -56,10 +65,9 @@ CREATE TABLE IF NOT EXISTS okrs (
 INSERT INTO contextual_attributes (contextual_attribute_name) VALUES
 	('page_id'),
 	('page_title'),
-	('page_namespace'),
+	('page_namespace_id'),
 	('page_namespace_name'),
 	('page_revision_id'),
-	('page_wikidata_id'),
 	('page_wikidata_qid'),
 	('page_content_language'),
 	('page_is_redirect'),
@@ -67,8 +75,6 @@ INSERT INTO contextual_attributes (contextual_attribute_name) VALUES
 	('page_user_groups_allowed_to_edit'),
 	('mediawiki_skin'),
 	('mediawiki_version'),
-	('mediawiki_is_production'),
-	('mediawiki_is_debug_mode'),
 	('mediawiki_database'),
 	('mediawiki_site_content_language'),
 	('mediawiki_site_content_language_variant'),
@@ -86,7 +92,8 @@ INSERT INTO contextual_attributes (contextual_attribute_name) VALUES
 	('performer_can_probably_edit_page'),
 	('performer_edit_count'),
 	('performer_edit_count_bucket'),
-	('performer_registration_dt');
+	('performer_registration_dt'),
+	('agent_ua_string');
 
 INSERT INTO okrs (name, description) VALUES
 	('FY24/25 SDS 2.4', 'FY24/25 SDS 2.4'),
