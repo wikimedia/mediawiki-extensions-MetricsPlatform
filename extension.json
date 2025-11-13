@@ -62,7 +62,8 @@
 				"MainConfig",
 				"MetricsPlatform.ConfigsFetcher",
 				"MetricsPlatform.XLab.EnrollmentAuthority",
-				"MetricsPlatform.XLab.ExperimentManager"
+				"MetricsPlatform.XLab.ExperimentManager",
+				"MetricsPlatform.Logger"
 			]
 		},
 		"XLabPageBeacon": {
@@ -76,7 +77,12 @@
 	"Hooks": {
 		"AuthPreserveQueryParams": "XLabMain",
 		"BeforeInitialize": "XLabMain",
-		"BeforePageDisplay": "XLabPageBeacon"
+		"BeforePageDisplay": [
+			"XLabMain",
+			"XLabPageBeacon"
+		],
+		"ApiBeforeMain": "XLabMain",
+		"APIAfterExecute": "XLabMain"
 	},
 	"ResourceModules": {
 		"ext.xLab": {

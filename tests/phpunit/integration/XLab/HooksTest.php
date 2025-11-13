@@ -9,9 +9,11 @@ use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\MetricsPlatform\XLab\Hooks;
 use MediaWiki\MediaWikiEntryPoint;
 use MediaWiki\Output\OutputPage;
+use MediaWiki\Skin\Skin;
 use MediaWiki\User\CentralId\CentralIdLookup;
 use MediaWikiIntegrationTestCase;
 use MockHttpTrait;
+use Psr\Log\LoggerInterface;
 use User;
 
 /**
@@ -42,6 +44,8 @@ class HooksTest
 	private RequestContext $context;
 	private OutputPage $output;
 	private MediaWikiEntryPoint $entryPoint;
+	private Skin $skin;
+	private LoggerInterface $logger;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -88,9 +92,12 @@ class HooksTest
 		$this->setService( 'CentralIdLookup', $this->centralIdLookup );
 
 		$this->resetServices();
+
 		$this->context = new RequestContext();
 		$this->output = new OutputPage( $this->context );
 		$this->entryPoint = $this->createMock( ActionEntryPoint::class );
+		$this->skin = $this->createMock( Skin::class );
+		$this->logger = $this->createMock( LoggerInterface::class );
 	}
 
 	private function onBeforeInitialize(): array {
@@ -100,7 +107,8 @@ class HooksTest
 			$services->getMainConfig(),
 			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
 			$services->getService( 'MetricsPlatform.XLab.EnrollmentAuthority' ),
-			$services->getService( 'MetricsPlatform.XLab.ExperimentManager' )
+			$services->getService( 'MetricsPlatform.XLab.ExperimentManager' ),
+			$this->logger
 		);
 
 		$hooks->onBeforeInitialize(
@@ -111,6 +119,7 @@ class HooksTest
 			$this->context->getRequest(),
 			$this->entryPoint
 		);
+		$hooks->onBeforePageDisplay( $this->output, $this->skin );
 
 		return $this->output->getJsConfigVars()['wgMetricsPlatformUserExperiments'];
 	}
@@ -342,6 +351,34 @@ class HooksTest
 			'ext.xLab',
 			$this->output->getModules(),
 			'The ext.xLab module is added to the output when the user is not enrolled in any active experiments'
+		);
+	}
+
+	/**
+	 * Tests that an error is logged when output decoration is performed before experiment enrollment, i.e. the
+	 * BeforePageDisplay hook is run before the BeforeInitialize hook.
+	 */
+	public function testLogsErrorWhenExperimentEnrollmentNotPerformed(): void {
+		$services = $this->getServiceContainer();
+
+		$hooks = new Hooks(
+			$services->getMainConfig(),
+			$services->getService( 'MetricsPlatform.ConfigsFetcher' ),
+			$services->getService( 'MetricsPlatform.XLab.EnrollmentAuthority' ),
+			$services->getService( 'MetricsPlatform.XLab.ExperimentManager' ),
+			$this->logger
+		);
+
+		$this->logger->expects( $this->once() )
+			->method( 'error' )
+			->with( 'Cannot decorate the output before experiment enrollment has been performed' );
+
+		$hooks->onBeforePageDisplay( $this->output, $this->skin );
+
+		$this->assertNotContains(
+			'ext.xLab',
+			$this->output->getModules(),
+			'The ext.xLab module is not added to the output if experiment enrollment hasn\'t been performed'
 		);
 	}
 }
