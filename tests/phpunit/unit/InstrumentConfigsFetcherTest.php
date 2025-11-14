@@ -257,7 +257,7 @@ class InstrumentConfigsFetcherTest extends MediaWikiUnitTestCase {
 			"stream_name" => "mediawiki.web_ui_scroll",
 			"schema_title" => "analytics/mediawiki/web_ui_scroll",
 			"contextual_attributes" => [
-				"page_namespace",
+				"page_namespace_id",
 				"page_revision_id",
 				"page_wikidata_qid",
 				"page_is_redirect",

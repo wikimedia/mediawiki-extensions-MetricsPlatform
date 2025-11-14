@@ -58,7 +58,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 					],
 					'stream_name' => 'product_metrics.web_base.foo',
 					'contextual_attributes' => [
-						'page_namespace',
+						'page_namespace_id',
 						'mediawiki_skin',
 					],
 				],
@@ -80,7 +80,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 					'producers' => [
 						'metrics_platform_client' => [
 							'provide_values' => [
-								'page_namespace',
+								'page_namespace_id',
 								'mediawiki_skin',
 							],
 							'stream_name' => 'product_metrics.web_base.foo',
@@ -116,7 +116,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 					'producers' => [
 						'metrics_platform_client' => [
 							'provide_values' => [
-								'page_namespace',
+								'page_namespace_id',
 								'mediawiki_skin',
 							],
 						],
@@ -136,7 +136,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 					],
 					'stream_name' => 'product_metrics.web_base',
 					'contextual_attributes' => [
-						'page_namespace',
+						'page_namespace_id',
 						'mediawiki_skin',
 					],
 				],
@@ -146,7 +146,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 					'producers' => [
 						'metrics_platform_client' => [
 							'provide_values' => [
-								'page_namespace',
+								'page_namespace_id',
 								'mediawiki_skin',
 							],
 							'stream_name' => 'product_metrics.web_base',
@@ -161,7 +161,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 					'producers' => [
 						'metrics_platform_client' => [
 							'provide_values' => [
-								'page_namespace',
+								'page_namespace_id',
 								'mediawiki_skin',
 							],
 						],
