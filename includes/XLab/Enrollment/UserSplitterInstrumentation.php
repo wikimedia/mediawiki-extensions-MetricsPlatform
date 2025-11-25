@@ -5,12 +5,11 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab\Enrollment;
 use Wikimedia\Assert\Assert;
 
 /**
- * Deterministic sample and bucketing based on user IDs.
+ * Deterministic sample and bucketing based on user identifiers.
  *
- * The caller takes care of turning a user ID into a deterministic hash with
- * uniform probability distribution (see UserHashGenerate).
+ * The caller takes care of turning the user identifier into a deterministic hash with {@link getUserHash()}.
  *
- * Given an example user that is assigned 0.421 and 3 buckets (A, B, C), it works as follows:
+ * Given an example user with a hash of 0.421 and 3 buckets (A, B, C), it works as follows:
  *
  * - The assigned float is scaled to cover the three buckets, in #scaledHash().
  *   0.421 * 3 = 1.263
@@ -28,33 +27,37 @@ use Wikimedia\Assert\Assert;
 class UserSplitterInstrumentation {
 
 	/**
-	 * Get hash of a user ID as a float between 0.0 (inclusive) and 1.0 (non-inclusive)
-	 * concatenated with an experiment name.
+	 * Get the subject ID for the user in the experiment as a number float between 0.0 (inclusive) and 1.0
+	 * (non-inclusive).
 	 *
-	 * @param int $userId
+	 * @see getSubjectId()
+	 *
+	 * @param mixed $identifier
 	 * @param string $experimentName
 	 * @return float
 	 */
-	public function getUserHash( int $userId, string $experimentName ): float {
-		$subjectId = $this->getSubjectId( $userId, $experimentName );
+	public function getUserHash( mixed $identifier, string $experimentName ): float {
+		$subjectId = $this->getSubjectId( $identifier, $experimentName );
 		return intval( substr( $subjectId, 0, 6 ), 16 ) / ( 0xffffff + 1 );
 	}
 
 	/**
-	 * Get hash of a user ID as a 'sha256' hash concatenated with an experiment name.
+	 * Get the subject ID for the user in the experiment.
 	 *
-	 * @param int $userId
+	 * The identifier is concatenated with the experiment name and hashed using the SHA-256 algorithm.
+	 *
+	 * @param mixed $identifier
 	 * @param string $experimentName
 	 * @return string
 	 */
-	public function getSubjectId( int $userId, string $experimentName ): string {
-		return hash( 'sha256', $userId . $experimentName );
+	public function getSubjectId( mixed $identifier, string $experimentName ): string {
+		return hash( 'sha256', (string)$identifier . $experimentName );
 	}
 
 	/**
 	 * Whether given user is in the sample.
 	 *
-	 * Should be called before getBucket().
+	 * Should be called before {@link getBucket()}.
 	 *
 	 * @param float $sampleRatio
 	 * @param array $buckets
@@ -76,13 +79,13 @@ class UserSplitterInstrumentation {
 	/**
 	 * Which bucket a given user is in.
 	 *
-	 * This does NOT imply sample and should usually be called after isSampled().
+	 * This does NOT imply sample and should usually be called after {@link isSampled()}.
 	 *
 	 * @param array $buckets
 	 * @param float $userHash
-	 * @return mixed|null Bucket name or null if buckets are unused.
+	 * @return string|null Bucket name or null if buckets are unused.
 	 */
-	public function getBucket( array $buckets, float $userHash ) {
+	public function getBucket( array $buckets, float $userHash ): ?string {
 		if ( $buckets === [] ) {
 			return null;
 		}

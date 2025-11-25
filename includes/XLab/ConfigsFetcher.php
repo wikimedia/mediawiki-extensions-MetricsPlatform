@@ -4,6 +4,7 @@ namespace MediaWiki\Extension\MetricsPlatform\XLab;
 
 use DateMalformedStringException;
 use DateTimeImmutable;
+use DomainException;
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Http\HttpRequestFactory;
 use MediaWiki\Json\FormatJson;
@@ -68,7 +69,7 @@ class ConfigsFetcher {
 
 		// Cache hit?
 		if ( $configs !== false ) {
-			return $this->processConfigs( $configs );
+			return $this->processConfigs( $configs, $type );
 		}
 
 		$configs = $this->stash->get( $key );
@@ -80,7 +81,7 @@ class ConfigsFetcher {
 			// the value in the cache was evicted due to pressure.
 			$this->cache->set( $key, $configs, ExpirationAwareness::TTL_WEEK );
 
-			return $this->processConfigs( $configs );
+			return $this->processConfigs( $configs, $type );
 		}
 
 		// There was no value in the cache or the stash? Cache the empty list for a minute to keep load on the stash to
@@ -233,12 +234,16 @@ class ConfigsFetcher {
 	 *  TODO: Add a link to the latest response format specification
 	 * @return array
 	 */
-	protected function processConfigs( array $result ): array {
+	protected function processConfigs( array $result, int $type ): array {
 		$dbName = $this->options->get( MainConfigNames::DBname );
-		$processedResult = [];
 		$now = new DateTimeImmutable();
+		$isExperiment = $type === self::EXPERIMENT;
+		$processedResult = [];
 
 		foreach ( $result as $config ) {
+			$config[ 'name' ] ??= $config[ 'slug' ];
+			$name = $config[ 'name' ];
+
 			try {
 				$start = new DateTimeImmutable( $config[ 'start' ] );
 				$end = new DateTimeImmutable( $config[ 'end' ] );
@@ -247,15 +252,31 @@ class ConfigsFetcher {
 					continue;
 				}
 
-				$config['sample'] = $this->getSampleConfig( $config, $dbName );
+				$config[ 'sample' ] = $this->getSampleConfig( $config, $dbName );
+
+				if (
+					$isExperiment &&
+					( !array_key_exists( 'groups', $config ) || !count( $config[ 'groups' ] ) )
+				) {
+					throw new DomainException();
+				}
 
 				$processedResult[] = $config;
 			} catch ( DateMalformedStringException $e ) {
 				$this->logger->error(
-					'start/end date could not be parsed while processing configs. ' .
-					'It seems xLab is emitting invalid dates: {exception}',
+					'Could not parse start/end for {experiment}. xLab might be emitting invalid dates',
 					[
+						'experiment' => $name,
 						'exception' => $e,
+					]
+				);
+
+				return [];
+			} catch ( DomainException ) {
+				$this->logger->error(
+					'{experiment} has no groups. xLab might be emitting invalid configs',
+					[
+						'experiment' => $name,
 					]
 				);
 
@@ -293,12 +314,10 @@ class ConfigsFetcher {
 			if ( is_numeric( $newRate ) ) {
 				$sampleConfig['rate'] = floatval( $newRate );
 			} else {
-				$name = $config['name'] ?? $config['slug'];
-
 				$this->logger->warning(
 					'The sample rate for {name} is not numeric. Setting the sample rate to 0.0',
 					[
-						'slug' => $name,
+						'name' => $config['name'],
 					]
 				);
 			}

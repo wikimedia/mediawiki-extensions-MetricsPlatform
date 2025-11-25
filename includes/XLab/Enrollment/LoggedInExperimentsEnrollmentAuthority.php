@@ -49,6 +49,11 @@ class LoggedInExperimentsEnrollmentAuthority implements EnrollmentAuthorityInter
 			if ( $isInSample ) {
 				$result->addAssignment(
 					$experimentName,
+
+					// UserSplitterInstrumentation#getBucket() returns null if $buckets ($groups here) is empty. We
+					// assert that it's not empty in ConfigsFetcher#processConfigs().
+
+					// @phan-suppress-next-line PhanTypeMismatchArgumentNullable
 					$this->userSplitterInstrumentation->getBucket( $groups, $userHash )
 				);
 			}

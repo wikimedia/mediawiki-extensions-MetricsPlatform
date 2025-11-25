@@ -3,10 +3,12 @@
 use MediaWiki\Config\ServiceOptions;
 use MediaWiki\Context\RequestContext;
 use MediaWiki\Extension\MetricsPlatform\XLab\ConfigsFetcher;
+use MediaWiki\Extension\MetricsPlatform\XLab\Coordinator;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\EveryoneExperimentsEnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\LoggedInExperimentsEnrollmentAuthority;
 use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\OverridesEnrollmentAuthority;
+use MediaWiki\Extension\MetricsPlatform\XLab\Enrollment\UserSplitterInstrumentation;
 use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManager;
 use MediaWiki\Logger\LoggerFactory;
 use MediaWiki\MediaWikiServices;
@@ -63,6 +65,13 @@ return [
 			$services->getService( 'MetricsPlatform.Logger' ),
 			EventLogging::getMetricsPlatformClient(),
 			$services->getStatsFactory()
+		);
+	},
+	'MetricsPlatform.XLab.Coordinator' => static function ( MediaWikiServices $services ): Coordinator {
+		return new Coordinator(
+			$services->getMainConfig(),
+			$services->getService( 'MetricsPlatform.XLab.ConfigsFetcher' ),
+			new UserSplitterInstrumentation()
 		);
 	}
 ];

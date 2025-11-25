@@ -71,7 +71,7 @@
 			]
 		},
 		"XLabPageBeacon": {
-			"class": "MediaWiki\\Extension\\MetricsPlatform\\XLab\\PageBeacon",
+			"class": "MediaWiki\\Extension\\MetricsPlatform\\Experiments\\PageBeacon",
 			"services": [
 				"MainConfig",
 				"MetricsPlatform.XLab.ExperimentManager"

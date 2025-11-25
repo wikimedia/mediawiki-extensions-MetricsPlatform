@@ -52,6 +52,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 			[
 				[
 					'slug' => 'foo',
+					'name' => 'foo',
 					'sample' => [
 						'unit' => 'session',
 						'rate' => 1,
@@ -64,6 +65,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 				],
 				[
 					'slug' => 'bar',
+					'name' => 'bar',
 					'sample' => [
 						'unit' => 'session',
 						'rate' => 0.5,
@@ -130,6 +132,7 @@ class HooksTest extends MediaWikiIntegrationTestCase {
 			[
 				[
 					'slug' => 'foo',
+					'name' => 'foo',
 					'sample' => [
 						'unit' => 'session',
 						'rate' => 1,

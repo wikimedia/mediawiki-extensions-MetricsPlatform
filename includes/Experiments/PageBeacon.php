@@ -1,9 +1,10 @@
 <?php
 
-namespace MediaWiki\Extension\MetricsPlatform\XLab;
+namespace MediaWiki\Extension\MetricsPlatform\Experiments;
 
 use MediaWiki\Config\Config;
 use MediaWiki\Config\ServiceOptions;
+use MediaWiki\Extension\MetricsPlatform\XLab\ExperimentManagerInterface;
 use MediaWiki\Hook\BeforePageDisplayHook;
 use MediaWiki\Html\Html;
 
@@ -22,7 +23,7 @@ class PageBeacon implements BeforePageDisplayHook {
 
 	private ServiceOptions $options;
 	private Config $config;
-	private ?ExperimentManagerInterface $experimentManager;
+	private ExperimentManagerInterface $experimentManager;
 
 	public function __construct(
 		Config $config,

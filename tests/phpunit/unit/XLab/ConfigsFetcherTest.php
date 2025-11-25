@@ -244,7 +244,7 @@ class ConfigsFetcherTest extends MediaWikiUnitTestCase {
 		$now = new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) );
 
 		$data1 = [
-			"slug" => "web-scroll-ui",
+			"name" => "web-scroll-ui",
 			"start" => $now->modify( '-1 month' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"end" => $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
@@ -266,7 +266,7 @@ class ConfigsFetcherTest extends MediaWikiUnitTestCase {
 			],
 		];
 		$data2 = [
-			"slug" => "desktop-ui-interactions",
+			"name" => "desktop-ui-interactions",
 			"start" => $now->modify( '-1 week' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"end" => $now->modify( '+1 week' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
@@ -290,7 +290,7 @@ class ConfigsFetcherTest extends MediaWikiUnitTestCase {
 		];
 		// This instrument won't be considered because it has not started yet
 		$data3 = [
-			"slug" => "CTRInstrument",
+			"name" => "CTRInstrument",
 			"start" => $now->modify( '+1 month' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"end" => $now->modify( '-2 month' )->format( 'Y-m-d\TH:i:s\Z' ),
 			"sample_unit" => "pageview",
