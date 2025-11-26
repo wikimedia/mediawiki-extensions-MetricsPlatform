@@ -97,6 +97,9 @@ class Hooks implements
 			// T393101: Add CSS classes representing experiment enrollment and assignment automatically so that
 			// experiment implementers don't have to do this themselves.
 			$out->addBodyClasses( EnrollmentCssClassSerializer::serialize( $this->latestEnrollmentResult->build() ) );
+
+			// T404262: Add field for A/B test (and control) findability in Logstash
+			LoggerFactory::getContext()->add( [ 'context.ab_tests' => $this->latestEnrollmentResult->build() ] );
 		}
 	}
 
@@ -160,9 +163,6 @@ class Hooks implements
 
 		// Initialize the PHP xLab SDK
 		$this->experimentManager->initialize( $this->latestEnrollmentResult->build() );
-
-		// T404262: Add field for A/B test (and control) findability in Logstash
-		LoggerFactory::getContext()->add( [ 'context.ab_tests' => $this->latestEnrollmentResult->build() ] );
 	}
 
 	/**
