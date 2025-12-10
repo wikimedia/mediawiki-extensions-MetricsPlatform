@@ -38,13 +38,32 @@ class ExperimentManager implements ExperimentManagerInterface {
 	 * @return Experiment
 	 */
 	public function getExperiment( string $experimentName ): Experiment {
+		$activeExperiments = $this->enrollmentResult['active_experiments'] ?? [];
 		$enrolledExperiments = $this->enrollmentResult['enrolled'] ?? [];
 
-		// The user is not enrolled in the experiment (also because the experiment doesn't exist)
-		if ( !in_array( $experimentName, $enrolledExperiments, true ) )	{
-			$this->logger->info( 'The ' . $experimentName . ' experiment is not registered. ' .
-				'Is the experiment configured and running?' );
+		if (
+			in_array( $experimentName, $activeExperiments, true ) &&
+			$this->enrollmentResult['sampling_units'][ $experimentName ] === 'mw-user' &&
+			!in_array( $experimentName, $enrolledExperiments, true )
+		) {
+			// For logged-in experiments we know whether the experiment is active, but the current user
+			// is not enrolled in it
+			$this->logger->info( 'The current user is not enrolled in ' .
+				'the ' . $experimentName . ' experiment' );
 			return new UnenrolledExperiment();
+		} else {
+			// For now, regarding logged-out experiments, there is no way to distinguish between
+			// an experiment that is not active, doesn't exist or the current user is not enrolled in
+			if ( !in_array( $experimentName, $enrolledExperiments, true ) ) {
+				$this->logger->info(
+					'{experiment} is not active or the current user is not enrolled in. ' .
+					'Is the experiment configured and running?',
+					[
+						'experiment' => $experimentName
+					]
+				);
+				return new UnenrolledExperiment();
+			}
 		}
 
 		$experimentConfig = $this->getExperimentConfig( $experimentName );

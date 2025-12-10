@@ -65,12 +65,29 @@ const loggedInExperimentMetricsClient = newMetricsClientInternal(
 function getExperiment( experimentName ) {
 	const userExperiments = mw.config.get( 'wgMetricsPlatformUserExperiments' );
 
-	if ( !userExperiments || !userExperiments.assigned[ experimentName ] ) {
+	if (
+		userExperiments &&
+		userExperiments.active_experiments.includes( experimentName ) &&
+		userExperiments.sampling_units[ experimentName ] === 'mw-user' &&
+		!userExperiments.assigned[ experimentName ]
+	) {
+		// For logged-in experiments we know whether the experiment is active, but the current user
+		// is not enrolled in it
 		// eslint-disable-next-line no-console
-		console.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment isn\'t registered. ' +
-			'Is the experiment configured and running?' );
+		console.log( 'mw.xLab.getExperiment(): The current user is not enrolled in ' +
+			'the "' + experimentName + '" experiment' );
 
 		return new UnenrolledExperiment( experimentName );
+	} else {
+		// For now, regarding logged-out experiments, there is no way to distinguish between
+		// an experiment that is not active, doesn't exist or the current user is not enrolled in
+		if ( !userExperiments || !userExperiments.assigned[ experimentName ] ) {
+			// eslint-disable-next-line no-console
+			console.log( 'mw.xLab.getExperiment(): The "' + experimentName + '" experiment is not active ' +
+				'or the current user is not enrolled in. Is the experiment configured and running?' );
+
+			return new UnenrolledExperiment( experimentName );
+		}
 	}
 
 	const assignedGroup = userExperiments.assigned[ experimentName ];

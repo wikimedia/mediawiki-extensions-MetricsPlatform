@@ -96,7 +96,11 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 	public function testGetExperimentLogsInformationalMessageNonExistingExperiment(): void {
 		$this->logger->expects( $this->once() )
 			->method( 'info' )
-			->with( 'The foo experiment is not registered. Is the experiment configured and running?' );
+			->with( '{experiment} is not active or the current user is not enrolled in. ' .
+				'Is the experiment configured and running?',
+			[
+				'experiment' => 'foo'
+			] );
 
 		$expectedExperiment = new UnenrolledExperiment();
 		$actualExperiment = $this->experimentManager->getExperiment( 'foo' );
@@ -108,7 +112,7 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 		$this->logger->expects( $this->once() )
 			->method( 'info' )
 			->with(
-				'The active-but-not-enrolled experiment is not registered. Is the experiment configured and running?'
+				'The current user is not enrolled in the active-but-not-enrolled experiment'
 			);
 
 		$expectedExperiment = new UnenrolledExperiment();
