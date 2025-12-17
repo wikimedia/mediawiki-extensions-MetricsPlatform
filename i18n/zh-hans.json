@@ -1,8 +1,9 @@
 {
 	"@metadata": {
 		"authors": [
-			"Huajing"
+			"Huajing",
+			"GuoPC"
 		]
 	},
-	"metricsplatform-desc": "这是 Metrics Platform 扩展"
+	"metricsplatform-desc": "这是Metrics Platform的扩展"
 }
