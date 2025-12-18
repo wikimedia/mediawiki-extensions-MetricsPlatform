@@ -1,8 +1,11 @@
 {
 	"@metadata": {
 		"authors": [
-			"Huajing"
+			"Huajing",
+			"GuoPC"
 		]
 	},
-	"metricsplatform-desc": "这是 Metrics Platform 扩展"
+	"metricsplatform-desc": "这是Metrics Platform的扩展",
+	"metricsplatform-xlab-non-successful-response": "xLab API返回了不成功的响应。",
+	"metricsplatform-xlab-api-empty-response-body": "xLab API返回了空的响应。"
 }
