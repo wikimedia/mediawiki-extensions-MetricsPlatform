@@ -241,7 +241,6 @@ class ConfigsFetcher {
 		$processedResult = [];
 
 		foreach ( $result as $config ) {
-			$config[ 'name' ] ??= $config[ 'slug' ];
 			$name = $config[ 'name' ];
 
 			try {
