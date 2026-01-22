@@ -93,21 +93,6 @@ class ExperimentManagerTest extends MediaWikiUnitTestCase {
 		$this->assertTrue( $expectedExperiment->isAssignedGroup( 'control' ) );
 	}
 
-	public function testGetExperimentLogsInformationalMessageNonExistingExperiment(): void {
-		$this->logger->expects( $this->once() )
-			->method( 'info' )
-			->with( '{experiment} is not active or the current user is not enrolled in. ' .
-				'Is the experiment configured and running?',
-			[
-				'experiment' => 'foo'
-			] );
-
-		$expectedExperiment = new UnenrolledExperiment();
-		$actualExperiment = $this->experimentManager->getExperiment( 'foo' );
-
-		$this->assertEquals( $expectedExperiment, $actualExperiment );
-	}
-
 	public function testGetExperimentLogsInformationalMessageActiveExperiment(): void {
 		$this->logger->expects( $this->once() )
 			->method( 'info' )

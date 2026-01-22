@@ -52,16 +52,7 @@ class ExperimentManager implements ExperimentManagerInterface {
 				'the ' . $experimentName . ' experiment' );
 			return new UnenrolledExperiment();
 		} else {
-			// For now, regarding logged-out experiments, there is no way to distinguish between
-			// an experiment that is not active, doesn't exist or the current user is not enrolled in
 			if ( !in_array( $experimentName, $enrolledExperiments, true ) ) {
-				$this->logger->info(
-					'{experiment} is not active or the current user is not enrolled in. ' .
-					'Is the experiment configured and running?',
-					[
-						'experiment' => $experimentName
-					]
-				);
 				return new UnenrolledExperiment();
 			}
 		}
