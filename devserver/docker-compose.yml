@@ -13,7 +13,7 @@ services:
       MYSQL_DB: mpic
       MYSQL_ROOT_PASSWORD: maria
   xlab:
-    image: docker-registry.wikimedia.org/repos/data-engineering/mpic:latest
+    image: docker-registry.wikimedia.org/repos/data-engineering/test-kitchen:latest
     container_name: xlab
     restart: always
     volumes:
