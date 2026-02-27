@@ -137,7 +137,7 @@ class ConfigsFetcherTest extends MediaWikiUnitTestCase {
 		$this->assertFalse( $this->stash->get( $expectedKey ) );
 		$this->assertFalse( $this->cache->get( $expectedKey ) );
 
-		$this->assertFalse( $status->isGood() );
+		$this->assertStatusNotGood( $status );
 
 		if ( $expectedErrorMessages ) {
 			$this->assertEquals( $expectedErrorMessages, $status->getMessages( 'error' ) );
